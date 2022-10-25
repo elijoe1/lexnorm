@@ -1,0 +1,4 @@
+[24/10/2022]
+- Conducted a cursory overview of the resources I had already, to create some initial links to investigate.
+[25/10/2022]
+- Created research document and started reading resources. Came up with some provisional methods (edit distance, CRFs), features (context, in lexicon), preprocessing (removal of NER, following the annotation guidelines), and post-processing (spellchecking).
