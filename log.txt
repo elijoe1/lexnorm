@@ -2,3 +2,7 @@
 - Conducted a cursory overview of the resources I had already, to create some initial links to investigate.
 [25/10/2022]
 - Created research document and started reading resources. Came up with some provisional methods (edit distance, CRFs), features (context, in lexicon), preprocessing (removal of NER, following the annotation guidelines), and post-processing (spellchecking).
+[2/11/2022]
+- Continued working on research document, reading two useful theses and deciding that one of the classifiers will probably be a CRF, and random forests could be used for both classification and normalisation (through ranking normalisation candidates).
+[05/11/2022]
+- Did some further reading while doing NLP practical 2. Perhaps will use simple feedforward neural network for one of the classifiers, maybe implemented from scratch (as opposed to Hannah's use of a logistic regression classifier, with only one feature (word embeddings)). Learnt more about 'structured prediction' which predicts the whole structure (sentence) as a whole rather than individual words, and therefore can optimise over whole predicted sentence.
