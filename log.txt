@@ -6,3 +6,5 @@
 - Continued working on research document, reading two useful theses and deciding that one of the classifiers will probably be a CRF, and random forests could be used for both classification and normalisation (through ranking normalisation candidates).
 [05/11/2022]
 - Did some further reading while doing NLP practical 2. Perhaps will use simple feedforward neural network for one of the classifiers, maybe implemented from scratch (as opposed to Hannah's use of a logistic regression classifier, with only one feature (word embeddings)). Learnt more about 'structured prediction' which predicts the whole structure (sentence) as a whole rather than individual words, and therefore can optimise over whole predicted sentence.
+[08/11/2022]
+- Further research, reading all relevant 2015 entries. Production of tentative plan for whole project. Models include CRF and random forest, and evaluation includes error reduction rate, precision, and recall.
