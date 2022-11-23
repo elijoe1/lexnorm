@@ -8,3 +8,5 @@
 - Did some further reading while doing NLP practical 2. Perhaps will use simple feedforward neural network for one of the classifiers, maybe implemented from scratch (as opposed to Hannah's use of a logistic regression classifier, with only one feature (word embeddings)). Learnt more about 'structured prediction' which predicts the whole structure (sentence) as a whole rather than individual words, and therefore can optimise over whole predicted sentence.
 [08/11/2022]
 - Further research, reading all relevant 2015 entries. Production of tentative plan for whole project. Models include CRF and random forest, and evaluation includes error reduction rate, precision, and recall.
+[23/11/2022]
+- More research, especially about decision trees and random forests. Found more resources to look at and looked at quite a lot of wikipedia pages. Think will do random forest and CRF, initially with scikit and default parameters (with cross validation) and then extension can implement random forest from scratch, and can do nested cross validation to produce ensemble of models with different hyper parameters. 
