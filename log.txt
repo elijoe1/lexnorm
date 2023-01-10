@@ -10,3 +10,7 @@
 - Further research, reading all relevant 2015 entries. Production of tentative plan for whole project. Models include CRF and random forest, and evaluation includes error reduction rate, precision, and recall.
 [23/11/2022]
 - More research, especially about decision trees and random forests. Found more resources to look at and looked at quite a lot of wikipedia pages. Think will do random forest and CRF, initially with scikit and default parameters (with cross validation) and then extension can implement random forest from scratch, and can do nested cross validation to produce ensemble of models with different hyper parameters. 
+[09/01/2022]
+- Reading over previous research. Still think random forest, CRF + theoretical selection for candidate step, and perhaps a single model for candidate generation based on theoretical insights. Ranger could be used for random forests - investigate. Found MFR baseline and ERR evaluation scripts already provided in shared task.
+[10/01/2022]
+- More research.
