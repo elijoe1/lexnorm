@@ -9,7 +9,7 @@ Most-Frequent-Replacement (MFR).
 """
 
 from optparse import OptionParser
-import normEval
+import lexnorm.src.data.normEval
 
 
 def err(msg):
