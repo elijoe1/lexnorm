@@ -29,10 +29,12 @@ def build_lexicon(
     categories = languages.intersection(defined_languages)
     for variant in {v for v in defined_variants if v <= max_variant}:
         for language in {
-            f"{l}_" if l != "english" else ""
-            for l in languages.intersection(defined_languages)
+            f"{l}_" if l != "american" else ""
+            for l in languages.intersection(defined_languages) - {"english"}
         }:
             categories.add(f"{language}variant_{variant}")
+    if max_variant >= 3:
+        categories.add("variant_3")
     for category in categories:
         for subset in subsets.intersection(defined_subsets):
             for size in {s for s in defined_sizes if s <= max_size}:
@@ -63,5 +65,8 @@ def filter_lexicon(lexicon: set[str]) -> set[str]:
 
 if __name__ == "__main__":
     build_lexicon(
-        {"english", "american", "australian"}, {"words", "proper-names"}, 70, 3
+        {"english", "british"},
+        {"abbreviations", "contractions", "proper-names", "upper", "words"},
+        35,
+        2,
     )
