@@ -2,6 +2,7 @@
 Code for my part II Dissertation on Lexical Normalisation
 
 ![lint badge](https://github.com/elijoe1/lexnorm/actions/workflows/black.yml/badge.svg)
+[![build badge](https://github.com/elijoe1/lexnorm/actions/workflows/python-app.yml/badge.svg)](https://github.com/elijoe1/lexnorm/actions/workflows/python-app.yml)
 
 ## Installation
 - Navigate to directory where you would like to have the project folder
