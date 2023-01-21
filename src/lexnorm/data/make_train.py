@@ -6,7 +6,10 @@ import os
 
 def concatenate(input1, input2, output):
     """
-    concatenate two files in W-NUT 2021 format
+    Concatenate two files in W-NUT 2021 format
+    @param input1: file 1
+    @param input2: file 2
+    @param output: output file
     """
     train_raw, train_norm = loadNormData(os.path.join(DATA_PATH, input1))
     dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, input2))
