@@ -7,9 +7,14 @@ def list_eligible(tweet: list[str]) -> list[bool]:
     """
     eligible_list = []
     for i, token in enumerate(tweet):
-        # check if contains forbidden characters (anything but numbers, letters, and apostrophe)
-        # as described in 2015 guideline 3
-        if any(not (char.isalnum() or char == "'") for char in token):
+        # check if contains forbidden characters (anything but numbers, letters, and internal apostrophes)
+        # as described in 2015 guideline 3 (interpreting apostrophe 'used in contraction' vs 'as single quote'
+        # as meaning internal vs external).
+        if (
+            any(not (char.isalnum() or char == "'") for char in token)
+            or token[0] == "'"
+            or token[-1] == "'"
+        ):
             eligible_list.append(False)
             continue
         # check if domain specific 'rt' as described in notebook 1.0 and 2015 guideline 3

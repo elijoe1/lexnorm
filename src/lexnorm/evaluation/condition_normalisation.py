@@ -59,5 +59,8 @@ def correlation(
     b = sum(p_normed.values())
     c = sum(n_unnormed.values())
     d = sum(n_normed.values())
-    phi = (a * d - b * c) / math.sqrt((a + b) * (b + d) * (a + c) * (c + d))
+    denom = math.sqrt((a + b) * (b + d) * (a + c) * (c + d))
+    # correct limiting value according to wikipedia
+    denom = denom if denom else 1
+    phi = (a * d - b * c) / denom
     return phi
