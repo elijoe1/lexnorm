@@ -1,11 +1,11 @@
 import os
-from itertools import chain, combinations
 
-from lexnorm.definitions import LEX_PATH
-from lexnorm.evaluation import condition_normalisation
+import requests
+
 from lexnorm.data import normEval
 from lexnorm.definitions import DATA_PATH
-import requests
+from lexnorm.definitions import LEX_PATH
+from lexnorm.evaluation import condition_normalisation
 
 defined_languages = {
     "english",
@@ -89,6 +89,7 @@ def refine(lexicon: set[str]) -> set[str]:
 
 
 def build_abbreviations():
+    # TODO: write test? Maybe just check length or doesn't raise exception
     abbrev_lex = set()
     params = {
         "action": "query",
@@ -120,7 +121,7 @@ def evaluate(raw_list, norm_list, lexicon):
     """
     Outputs statistics for a given lexicon
     """
-    # TODO: write test, explore evaluation for different lexicons
+    # TODO: write test?
     a, b, c, d = condition_normalisation.contingency(
         raw_list, norm_list, lambda x: x in lexicon, pair=True
     )
@@ -179,11 +180,11 @@ if __name__ == "__main__":
     full_raw, full_norm = normEval.loadNormData(
         os.path.join(DATA_PATH, "interim/train.txt")
     )
-    lexicon = build(
+    lex = build(
         {"english", "american"},
         {"contractions", "proper-names", "upper", "words"},
         50,
         1,
     )
 
-    evaluate(full_raw, full_norm, refine(lexicon.union(build_abbreviations())))
+    evaluate(full_raw, full_norm, refine(lex.union(build_abbreviations())))
