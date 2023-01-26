@@ -27,3 +27,13 @@ def list_eligible(tweet: list[str]) -> list[bool]:
                 continue
         eligible_list.append(True)
     return eligible_list
+
+
+# TODO: require norm eligible test
+def eligible(tok: str) -> bool:
+    """
+
+    @param tok: token to check
+    @return: if eligible for normalisation or not
+    """
+    return list_eligible([tok])[0]

@@ -1,6 +1,7 @@
-from collections import Counter
 import math
+from collections import Counter
 from typing import Callable
+
 from lexnorm.models import annotation
 
 
@@ -11,6 +12,7 @@ def contingency(
     pair: bool = False,
     norm: bool = False,
 ):
+    # TODO get normalisation list, then allow tests on entire normalisation pair (maybe new function)
     """
     Returns four counters a, b, c, d, representing: a - condition met, not normalised; b - condition met, normalised;
     c - condition not met, not normalised; d - condition not met, normalised, over all eligible tokens as defined by
@@ -32,7 +34,7 @@ def contingency(
         for raw, normed, elig in zip(tweet_raw, tweet_norm, eligible_list):
             if elig:
                 tok = normed if norm else raw
-                to_update = (tok, normed) if pair else tok
+                to_update = (raw, normed) if pair else tok
                 if raw != normed and condition(tok):
                     p_normed.update([to_update])
                 elif raw == normed and condition(tok):
