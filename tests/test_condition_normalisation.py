@@ -2,7 +2,9 @@ from lexnorm.evaluation import condition_normalisation
 from collections import Counter
 from lexnorm.definitions import DATA_PATH
 from lexnorm.data import normEval
-from lexnorm.models import annotation
+from lexnorm.data import baseline
+from lexnorm.models import filtering
+from lexnorm.data import norm_dict
 import os
 
 
@@ -13,36 +15,31 @@ def test_correlation():
     c = Counter(a=1, b=0)
     d = Counter(a=2, f=1)
     assert round(condition_normalisation.correlation(a, b, c, d), 3) == 0.478
+    assert condition_normalisation.correlation(Counter(), Counter(), c, d) == 0
 
 
-def test_contingency():
-    # TODO: make more rigorous e.g. by supplying custom raw and norm
-    full_raw, full_norm = normEval.loadNormData(
-        os.path.join(DATA_PATH, "interim/train.txt")
+def test_contingency_from_dict(tmp_path):
+    raw = [
+        ["bruther", "get", "outt", "youre", "feelins", "loll"],
+        ["my", "brother", "thinkgs", "youre", "trippin"],
+    ]
+    norm = [
+        ["brother", "get", "out", "your", "feelings", "lol"],
+        ["my", "brother", "thinks", "you're", "tripping"],
+    ]
+    baseline.write(raw, norm, os.path.join(tmp_path, "tmp"))
+    normalisations = norm_dict.construct(os.path.join(tmp_path, "tmp"))
+    a, b, c, d = condition_normalisation.contingency_from_dict(
+        normalisations, lambda x: len(x[0]) <= 4
     )
-    a, b, c, d = condition_normalisation.contingency(
-        full_raw, full_norm, lambda x: x[0] == "a", True
-    )
-    raw_count = 0
-    cond_count = 0
-    a_count = 0
-    c_count = 0
-    for tweet_raw, tweet_norm in zip(full_raw, full_norm):
-        eligible_list = annotation.list_eligible(tweet_raw)
-        for tok_raw, tok_norm, elig in zip(tweet_raw, tweet_norm, eligible_list):
-            if elig:
-                raw_count += 1
-                if tok_raw[0] == "a":
-                    cond_count += 1
-                    if tok_raw == tok_norm:
-                        a_count += 1
-                elif tok_raw == tok_norm:
-                    c_count += 1
-    a_sum = sum(a.values())
-    b_sum = sum(b.values())
-    c_sum = sum(c.values())
-    d_sum = sum(d.values())
-    assert a_sum + b_sum + c_sum + d_sum == raw_count
-    assert a_sum + b_sum == cond_count
-    assert a_sum == a_count
-    assert c_sum == c_count
+    assert dict(a) == {("my", "my"): 1, ("get", "get"): 1}
+    assert dict(b) == {("loll", "lol"): 1, ("outt", "out"): 1}
+    assert dict(c) == {("brother", "brother"): 1}
+    assert dict(d) == {
+        ("bruther", "brother"): 1,
+        ("youre", "your"): 1,
+        ("feelins", "feelings"): 1,
+        ("thinkgs", "thinks"): 1,
+        ("trippin", "tripping"): 1,
+        ("youre", "you're"): 1,
+    }

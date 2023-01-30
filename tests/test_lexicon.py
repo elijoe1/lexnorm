@@ -43,6 +43,3 @@ def test_build():
             lex2.add(line.strip().lower())
     difference = lex1 ^ lex2
     assert not difference
-
-
-# def test_

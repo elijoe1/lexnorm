@@ -2,7 +2,7 @@ import os
 
 import requests
 
-from lexnorm.data import normEval
+from lexnorm.data import norm_dict
 from lexnorm.definitions import DATA_PATH
 from lexnorm.definitions import LEX_PATH
 from lexnorm.evaluation import condition_normalisation
@@ -79,7 +79,6 @@ def build(
 
 
 def refine(lexicon: set[str]) -> set[str]:
-    # TODO: write test
     filtered_lexicon = set()
     for word in lexicon:
         if len(word) <= 1 and word not in ["a", "i"]:
@@ -89,7 +88,6 @@ def refine(lexicon: set[str]) -> set[str]:
 
 
 def build_abbreviations():
-    # TODO: write test? Maybe just check length or doesn't raise exception
     abbrev_lex = set()
     params = {
         "action": "query",
@@ -117,29 +115,22 @@ def build_abbreviations():
     return abbrev_lex
 
 
-def evaluate(raw_list, norm_list, lexicon):
+def evaluate(norm_dict, lexicon):
     """
     Outputs statistics for a given lexicon
     """
-    # TODO: write test?
-    a, b, c, d = condition_normalisation.contingency(
-        raw_list, norm_list, lambda x: x in lexicon, pair=True
+    a, b, c, d = condition_normalisation.contingency_from_dict(
+        norm_dict, lambda x: x[0] in lexicon
     )
     print(
-        f"Correlation of lexicon with normalisation: {condition_normalisation.correlation(a, b, c, d):.2f}"
+        f"Correlation of in lexicon with normalisation: {condition_normalisation.correlation(a, b, c, d):.2f}"
     )
-    print(
-        f"Most common un-normalised raw alphanumeric tokens in lexicon: {a.most_common(20)}"
+    print(f"Most common normalised raw phrases in lexicon: {b.most_common(20)}")
+    print(f"Most common un-normalised raw phrases not in lexicon: {c.most_common(20)}")
+    a, b, _, _ = condition_normalisation.contingency_from_dict(
+        norm_dict, lambda x: x[1] not in lexicon
     )
-    print(
-        f"Most common normalised raw alphanumeric tokens in lexicon: {b.most_common(20)}"
-    )
-    print(
-        f"Most common un-normalised raw alphanumeric tokens not in lexicon: {c.most_common(20)}"
-    )
-    print(
-        f"Most common normalised raw alphanumeric tokens not in lexicon: {d.most_common(20)}"
-    )
+    print(f"Most common token normalisations not in lexicon: {(a + b).most_common(20)}")
 
 
 if __name__ == "__main__":
@@ -177,14 +168,11 @@ if __name__ == "__main__":
     #                     ),
     #                 )
     #                 print(max_performance)
-    full_raw, full_norm = normEval.loadNormData(
-        os.path.join(DATA_PATH, "interim/train.txt")
-    )
+    normalisations = norm_dict.construct(os.path.join(DATA_PATH, "interim/train.txt"))
     lex = build(
         {"english", "american"},
         {"contractions", "proper-names", "upper", "words"},
         50,
         1,
     )
-
-    evaluate(full_raw, full_norm, refine(lex.union(build_abbreviations())))
+    evaluate(normalisations, refine(lex.union(build_abbreviations())))

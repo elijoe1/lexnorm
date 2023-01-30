@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# too large - contains old (w2v_100) and new (w2v_400) twitter embeddings from vdg
+monoise_data/
