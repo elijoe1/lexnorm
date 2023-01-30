@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import requests
 
@@ -175,4 +176,7 @@ if __name__ == "__main__":
         50,
         1,
     )
-    evaluate(normalisations, refine(lex.union(build_abbreviations())))
+    lex = refine(lex.union(build_abbreviations()))
+    with open(os.path.join(DATA_PATH, "interim/lexicon.txt"), "wb") as f:
+        pickle.dump(lex, f)
+    # evaluate(normalisations, lex)
