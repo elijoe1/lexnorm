@@ -199,7 +199,8 @@ if __name__ == "__main__":
     q = multiprocessing.Queue()
     processes = []
     train_data = pd.DataFrame()
-    batch_size = math.floor(len(raw) / 64)
+    # batch_size = math.floor(len(raw) / 64)
+    batch_size = 10
     for i in range(0, 64):
         p = Process(
             target=candidates_from_tweets,
