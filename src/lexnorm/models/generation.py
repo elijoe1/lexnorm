@@ -1,6 +1,12 @@
+import multiprocessing
 import os
 import pickle
 import time
+from collections import Counter
+from multiprocessing import Process
+from multiprocessing.pool import Pool
+
+import gensim.models
 
 from lexnorm.data import word2vec, norm_dict, normEval
 from lexnorm.definitions import DATA_PATH
@@ -57,12 +63,33 @@ import multiprocessing as mp
 #         candidates_list.append(tweet_candidates)
 #     return candidates_list
 
-# def
+
+def candidates_from_tweets(
+    tweets, vectors, normalisations, lexicon, spellcheck_dictionary, queue
+):
+    all_candidates = pd.DataFrame()
+    for tweet in tweets:
+        for tok in tweet:
+            all_candidates = pd.concat(
+                [
+                    all_candidates,
+                    candidates_from_token(
+                        tok, vectors, normalisations, lexicon, spellcheck_dictionary
+                    ),
+                ]
+            )
+    queue.put(all_candidates)
 
 
 def candidates_from_token(
-    orig, vectors, normalisations, lexicon, spellcheck_dictionary
-):
+    orig: str,
+    vectors: gensim.models.keyedvectors,
+    normalisations: dict[str, Counter],
+    lexicon: set,
+    spellcheck_dictionary: Dictionary,
+) -> pd.DataFrame:
+    if not is_eligible(orig):
+        return pd.DataFrame()
     candidates = original_token(orig)
     candidates = candidates.combine_first(word_embeddings(orig, vectors))
     candidates = candidates.combine_first(norm_lookup(orig, normalisations))
@@ -168,31 +195,23 @@ if __name__ == "__main__":
         lex = pickle.load(lf)
     normalisations = norm_dict.construct(os.path.join(DATA_PATH, "interim/train.txt"))
     spellcheck_dict = Dictionary.from_files("en_US")
-    # threads = []
-    start = time.time()
+    q = multiprocessing.Queue()
+    processes = []
     train_data = pd.DataFrame()
-    for tweet in raw[:10]:
-        for tok in tweet:
-            train_data = pd.concat(
-                [
-                    train_data,
-                    candidates_from_token(
-                        tok, w2v, normalisations, lex, spellcheck_dict
-                    ),
-                ]
-            )
-    # for i in range(10):
-    #     t = threading.Thread(
-    #         target=generate_candidates,
-    #         args=(raw[i : i + 10], w2v, lex, normalisations, spellcheck_dict),
-    #     )
-    #     threads.append(t)
-    #     t.start()
-    # for t in threads:
-    #     t.join()
-    end = time.time()
-    print(end - start)
-    # about 40 secs not multithreaded for 10 tweets - 36 hours overall (!)
-    # 25 tweets in 80 secs! better. 366 seconds for 100 tweets -
+    for i in range(0, 64):
+        p = Process(
+            target=candidates_from_tweets,
+            args=(raw[i], w2v, normalisations, lex, spellcheck_dict, q),
+        )
+        processes.append(p)
+    start = time.time()
+    for p in processes:
+        p.start()
+        print("started")
+    for p in processes:
+        train_data = pd.concat([train_data, q.get()])
+    for p in processes:
+        p.join()
+        print("finished")
     with open(os.path.join(DATA_PATH, "interim/candidates.txt"), "w") as f:
         train_data.to_csv(f)
