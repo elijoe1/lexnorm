@@ -201,7 +201,7 @@ if __name__ == "__main__":
     for i in range(0, 64):
         p = Process(
             target=candidates_from_tweets,
-            args=(raw[i], w2v, normalisations, lex, spellcheck_dict, q),
+            args=(raw[i:5], w2v, normalisations, lex, spellcheck_dict, q),
         )
         processes.append(p)
     start = time.time()
