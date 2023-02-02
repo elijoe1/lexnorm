@@ -99,7 +99,9 @@ def candidates_from_token(
     # can set incalculable similarities to NaN as this is automatically picked up by the rand forest - MAY WANT TO BE
     # DIFFERENT for other models.
     candidates.cosine_to_orig = candidates.index.map(
-        lambda x: vectors.similarity(x, orig) if x in vectors else np.nan
+        lambda x: vectors.similarity(x, orig)
+        if (x in vectors and orig in vectors)
+        else np.nan
     )
     candidates["in_lexicon"] = candidates.index.map(lambda x: 1 if x in lexicon else 0)
     candidates["length"] = candidates.index.map(lambda x: len(x))
@@ -123,8 +125,8 @@ def is_subseq(x, y):
 def original_token(tok):
     # AS IN MONOISE
     # needed if detect step is skipped, as all tokens will be replaced by one from the list of candidates
-    candidate = pd.DataFrame(columns=["cosine_to_orig", "from_original_token"])
-    candidate.loc[tok] = {"from_original_token": 1, "cosine_to_orig": 1}
+    candidate = pd.DataFrame(columns=["from_original_token"])
+    candidate.loc[tok] = {"from_original_token": 1}
     return candidate
 
 
