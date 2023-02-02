@@ -2,19 +2,17 @@ import math
 import multiprocessing
 import os
 import pickle
-import time
 from collections import Counter
 from multiprocessing import Process
-from multiprocessing.pool import Pool
 
 import gensim.models
+import numpy as np
+import pandas as pd
+from spylls.hunspell import Dictionary
 
 from lexnorm.data import word2vec, norm_dict, normEval
 from lexnorm.definitions import DATA_PATH
 from lexnorm.models.filtering import is_eligible
-from spylls.hunspell import Dictionary
-import pandas as pd
-import multiprocessing as mp
 
 
 # def generate_candidates(
@@ -95,10 +93,31 @@ def candidates_from_token(
     candidates = candidates.combine_first(word_embeddings(orig, vectors))
     candidates = candidates.combine_first(norm_lookup(orig, normalisations))
     candidates = candidates.combine_first(spellcheck(orig, spellcheck_dictionary))
-    # # obviously lookup on the train set will always produce the correct candidate (perhaps among others)!
+    # obviously lookup on the train set will always produce the correct candidate (perhaps among others)!
     candidates = candidates.combine_first(clipping(orig, lexicon))
     candidates = candidates.combine_first(split(orig, lexicon))
+    # can set incalculable similarities to NaN as this is automatically picked up by the rand forest - MAY WANT TO BE
+    # DIFFERENT for other models.
+    candidates.cosine_to_orig = candidates.index.map(
+        lambda x: vectors.similarity(x, orig) if x in vectors else np.nan
+    )
+    candidates["in_lexicon"] = candidates.index.map(lambda x: 1 if x in lexicon else 0)
+    candidates["length"] = candidates.index.map(lambda x: len(x))
+    candidates["same_order"] = candidates.index.map(
+        lambda x: 1 if is_subseq(orig, x) else 0
+    )
+    # copy across features of original word to each candidate as decision whether to normalize based solely upon the original word
+    for feature in ["norms_seen", "in_lexicon", "same_order", "length"]:
+        candidates[f"orig_{feature}"] = candidates.loc[orig][feature]
+    # TODO internally calculated distance and rank for hunspell
+    # TODO ngram probabilities
+    # TODO freq of cand in train?
     return candidates
+
+
+def is_subseq(x, y):
+    iterator = iter(y)
+    return all(c in iterator for c in x)
 
 
 def original_token(tok):
@@ -119,7 +138,8 @@ def word_embeddings(tok, vectors, threshold=0):
     # can use twitter embeddings from van der Goot - based on distributional hypothesis to find tokens with similar semantics
     # could use cosine similarity as a feature for selection? Using here to get most similar candidates.
     # ISSUE: antonyms also often present in same contexts.
-    candidates = pd.DataFrame(columns=["cosine_to_orig", "from_word_embeddings"])
+    # done need from_word_embeddings as colinear with embeddings_rank
+    candidates = pd.DataFrame(columns=["cosine_to_orig", "embeddings_rank"])
     cands = []
     if tok in vectors:
         cands = [
@@ -127,8 +147,13 @@ def word_embeddings(tok, vectors, threshold=0):
             for c in vectors.similar_by_vector(tok)
             if is_eligible(c[0]) and c[1] >= threshold and c[0].islower()
         ]
-    for k, v in cands:
-        candidates.loc[k] = {"cosine_to_orig": v, "from_word_embeddings": 1}
+    for rank, c in enumerate(cands):
+        k, v = c
+        candidates.loc[k] = {
+            "cosine_to_orig": v,
+            "from_word_embeddings": 1,
+            "embeddings_rank": rank,
+        }
     return candidates
 
 
@@ -137,9 +162,10 @@ def norm_lookup(tok, normalisations):
     # MONOISE
     # lookup in list of all replacement pairs found in the training data (and external sources?)
     # all norm tokens with raw token tok are included as candidates
-    candidates = pd.DataFrame(columns=["norms_seen", "from_norm_lookup"])
+    # don't need from_lookup as this is colinear with norms_seen
+    candidates = pd.DataFrame(columns=["norms_seen"])
     for k, v in normalisations.get(tok, {}).items():
-        candidates.loc[k] = {"norms_seen": v, "from_norm_lookup": 1}
+        candidates.loc[k] = {"norms_seen": v}
     return candidates
 
 
@@ -174,10 +200,14 @@ def split(tok, lex):
 
 def spellcheck(tok, dictionary):
     # TODO: no control over this - can I change in source code? To load in custom lexicon must completely reimplement!!
-    candidates = pd.DataFrame(columns=["from_spellcheck"])
+    # TODO: rank may have absolutely no meaning here...
+    # don't need from_spellcheck as colinear with spellcheck_rank
+    candidates = pd.DataFrame(columns=["spellcheck_rank"])
+    rank = 0
     for c in dictionary.suggest(tok):
         if c.islower():
-            candidates.loc[c] = {"from_spellcheck": 1}
+            candidates.loc[c] = {"from_spellcheck": 1, "spellcheck_rank": rank}
+            rank += 1
     return candidates
 
 
@@ -213,14 +243,13 @@ if __name__ == "__main__":
             ),
         )
         processes.append(p)
-    start = time.time()
     for p in processes:
         p.start()
-        print("started")
+    print("started")
     for p in processes:
         train_data = pd.concat([train_data, q.get()])
     for p in processes:
         p.join()
-        print("finished")
+    print("finished")
     with open(os.path.join(DATA_PATH, "interim/candidates.txt"), "w") as f:
         train_data.to_csv(f)
