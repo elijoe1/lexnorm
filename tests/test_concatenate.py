@@ -1,11 +1,11 @@
 from lexnorm.data.normEval import loadNormData
-from lexnorm.data import make_train
+from lexnorm.data.concatenate import concatenate
 from lexnorm.definitions import DATA_PATH
 import os
 
 
 def test_concatenate(tmp_path):
-    make_train.concatenate(
+    concatenate(
         "raw/train.norm", "raw/dev.norm", os.path.join(tmp_path, "concatenated.txt")
     )
     concatenated = loadNormData(os.path.join(tmp_path, "concatenated.txt"))

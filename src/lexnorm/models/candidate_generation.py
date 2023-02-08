@@ -63,6 +63,33 @@ from lexnorm.models.filtering import is_eligible
 #     return candidates_list
 
 
+def create_training_data(
+    tweets,
+    vectors,
+    normalisations,
+    lexicon,
+    spellcheck_dictionary,
+    queue,
+    process,
+    gold,
+):
+    all_candidates = pd.DataFrame()
+    tok_index = 0
+    for raw_tweet, norm_tweet in zip(tweets, gold):
+        for raw_tok, norm_tok in zip(raw_tweet, norm_tweet):
+            candidates = candidates_from_token(
+                raw_tok, vectors, normalisations, lexicon, spellcheck_dictionary
+            )
+            if is_eligible(raw_tok):
+                candidates["correct"] = candidates["candidate"] == norm_tok
+                candidates["raw_tok_index"] = f"{process}_{tok_index}"
+                candidates.set_index("")
+                tok_index += 1
+            all_candidates = pd.concat([all_candidates, candidates])
+            print(candidates)
+    queue.put(all_candidates)
+
+
 def candidates_from_tweets(
     tweets, vectors, normalisations, lexicon, spellcheck_dictionary, queue
 ):
@@ -114,7 +141,7 @@ def candidates_from_token(
     # TODO internally calculated distance and rank for hunspell
     # TODO ngram probabilities
     # TODO freq of cand in train?
-    return candidates
+    return candidates.reset_index(names="candidate")
 
 
 def is_subseq(x, y):
@@ -214,44 +241,37 @@ def spellcheck(tok, dictionary):
 
 
 if __name__ == "__main__":
-    # TODO use multithreading for generate_candidates for speedup. (possible as all data used is read only).
-    # to do this may need to load all the data for each process (ACTUALLY think shared memory is fine...investigate)
-    # make a bunch of processes each loading everything, and processing some amount of tweets. spawn all of them
-    # and give them each some amount of tweets. must tell slurm how many cores want to use.
-    # can point to files in rds, then each process can load this into its ram. Each core has about 4gb.
-    # could do: master script spawns 50 processes, each does df for 10 tweets and returns this. we join this all together
-    # and append to csv and repeat (to prevent overfilling memory).
-    # module load python, create venv. Then in script, activate venv, install requirements, run script. files in rds
     raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "interim/train.txt"))
     w2v = word2vec.get_vectors(os.path.join(DATA_PATH, "interim/train.txt"))
     with open(os.path.join(DATA_PATH, "interim/lexicon.txt"), "rb") as lf:
         lex = pickle.load(lf)
     normalisations = norm_dict.construct(os.path.join(DATA_PATH, "interim/train.txt"))
     spellcheck_dict = Dictionary.from_files("en_US")
-    q = multiprocessing.Queue()
+    queue = multiprocessing.Queue()
     processes = []
     train_data = pd.DataFrame()
     batch_size = math.floor(len(raw) / 64)
+    # batch_size = 2
     for i in range(0, 64):
         p = Process(
-            target=candidates_from_tweets,
+            target=create_training_data,
             args=(
                 raw[i * batch_size : (i + 1) * batch_size],
                 w2v,
                 normalisations,
                 lex,
                 spellcheck_dict,
-                q,
+                queue,
+                i,
+                norm[i * batch_size : (i + 1) * batch_size],
             ),
         )
         processes.append(p)
     for p in processes:
         p.start()
-    print("started")
     for p in processes:
-        train_data = pd.concat([train_data, q.get()])
+        train_data = pd.concat([train_data, queue.get()])
     for p in processes:
         p.join()
-    print("finished")
     with open(os.path.join(DATA_PATH, "interim/candidates.txt"), "w") as f:
         train_data.to_csv(f)
