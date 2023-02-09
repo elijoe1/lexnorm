@@ -276,5 +276,5 @@ if __name__ == "__main__":
         train_data = pd.concat([train_data, queue.get()])
     for p in processes:
         p.join()
-    with open(os.path.join(DATA_PATH, "hpc/candidates.txt"), "w") as f:
+    with open(os.path.join(DATA_PATH, "hpc/candidates.txt"), "w+") as f:
         train_data.to_csv(f)
