@@ -85,6 +85,7 @@ def annotated_candidates_from_tweets(
                     lambda x: 1 if x == norm_tok else np.nan
                 )
                 candidates["raw_tok_index"] = f"{process}_{tok_index}"
+                candidates["gold"] = norm_tok
                 tok_index += 1
             all_candidates = pd.concat([all_candidates, candidates])
     queue.put(all_candidates)
