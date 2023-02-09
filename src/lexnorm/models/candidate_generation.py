@@ -245,7 +245,7 @@ def spellcheck(tok, dictionary):
 
 
 if __name__ == "__main__":
-    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
     w2v = word2vec.get_vectors(os.path.join(DATA_PATH, "raw/train.norm"))
     with open(os.path.join(DATA_PATH, "interim/lexicon.txt"), "rb") as lf:
         lex = pickle.load(lf)
