@@ -63,7 +63,7 @@ from lexnorm.models.filtering import is_eligible
 #     return candidates_list
 
 
-def create_training_data(
+def annotated_candidates_from_tweets(
     tweets,
     vectors,
     normalisations,
@@ -80,13 +80,13 @@ def create_training_data(
             candidates = candidates_from_token(
                 raw_tok, vectors, normalisations, lexicon, spellcheck_dictionary
             )
-            if is_eligible(raw_tok):
-                candidates["correct"] = candidates["candidate"] == norm_tok
+            if not candidates.empty:
+                candidates["correct"] = candidates.index.map(
+                    lambda x: 1 if x == norm_tok else np.nan
+                )
                 candidates["raw_tok_index"] = f"{process}_{tok_index}"
-                candidates.set_index("")
                 tok_index += 1
             all_candidates = pd.concat([all_candidates, candidates])
-            print(candidates)
     queue.put(all_candidates)
 
 
@@ -130,18 +130,21 @@ def candidates_from_token(
         if (x in vectors and orig in vectors)
         else np.nan
     )
-    candidates["in_lexicon"] = candidates.index.map(lambda x: 1 if x in lexicon else 0)
+    candidates["in_lexicon"] = candidates.index.map(
+        lambda x: 1 if x in lexicon else np.nan
+    )
     candidates["length"] = candidates.index.map(lambda x: len(x))
     candidates["same_order"] = candidates.index.map(
-        lambda x: 1 if is_subseq(orig, x) else 0
+        lambda x: 1 if is_subseq(orig, x) else np.nan
     )
     # copy across features of original word to each candidate as decision whether to normalize based solely upon the original word
+    # do we really want to copy same_order? done in MoNoise but suspicious...
     for feature in ["norms_seen", "in_lexicon", "same_order", "length"]:
         candidates[f"orig_{feature}"] = candidates.loc[orig][feature]
-    # TODO internally calculated distance and rank for hunspell
+    # TODO internally calculated distance and rank for hunspell (if even possible)
     # TODO ngram probabilities
     # TODO freq of cand in train?
-    return candidates.reset_index(names="candidate")
+    return candidates
 
 
 def is_subseq(x, y):
@@ -241,11 +244,11 @@ def spellcheck(tok, dictionary):
 
 
 if __name__ == "__main__":
-    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "interim/train.txt"))
-    w2v = word2vec.get_vectors(os.path.join(DATA_PATH, "interim/train.txt"))
+    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    w2v = word2vec.get_vectors(os.path.join(DATA_PATH, "raw/train.norm"))
     with open(os.path.join(DATA_PATH, "interim/lexicon.txt"), "rb") as lf:
         lex = pickle.load(lf)
-    normalisations = norm_dict.construct(os.path.join(DATA_PATH, "interim/train.txt"))
+    normalisations = norm_dict.construct(os.path.join(DATA_PATH, "raw/train.norm"))
     spellcheck_dict = Dictionary.from_files("en_US")
     queue = multiprocessing.Queue()
     processes = []
@@ -254,7 +257,7 @@ if __name__ == "__main__":
     # batch_size = 2
     for i in range(0, 64):
         p = Process(
-            target=create_training_data,
+            target=annotated_candidates_from_tweets,
             args=(
                 raw[i * batch_size : (i + 1) * batch_size],
                 w2v,
@@ -273,5 +276,5 @@ if __name__ == "__main__":
         train_data = pd.concat([train_data, queue.get()])
     for p in processes:
         p.join()
-    with open(os.path.join(DATA_PATH, "interim/candidates.txt"), "w") as f:
+    with open(os.path.join(DATA_PATH, "hpc/candidates.txt"), "w") as f:
         train_data.to_csv(f)
