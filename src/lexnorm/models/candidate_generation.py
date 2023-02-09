@@ -255,7 +255,6 @@ if __name__ == "__main__":
     processes = []
     train_data = pd.DataFrame()
     batch_size = math.ceil(len(raw) / 64)
-    # batch_size = 2
     for i in range(0, 64):
         p = Process(
             target=annotated_candidates_from_tweets,
@@ -277,5 +276,5 @@ if __name__ == "__main__":
         train_data = pd.concat([train_data, queue.get()])
     for p in processes:
         p.join()
-    with open(os.path.join(DATA_PATH, "hpc/candidates.txt"), "w+") as f:
+    with open(os.path.join(DATA_PATH, "hpc/train_annotated.txt"), "w+") as f:
         train_data.to_csv(f)
