@@ -253,7 +253,7 @@ if __name__ == "__main__":
     queue = multiprocessing.Queue()
     processes = []
     train_data = pd.DataFrame()
-    batch_size = math.floor(len(raw) / 64)
+    batch_size = math.ceil(len(raw) / 64)
     # batch_size = 2
     for i in range(0, 64):
         p = Process(
