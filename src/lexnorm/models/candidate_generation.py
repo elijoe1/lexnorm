@@ -253,7 +253,7 @@ def spellcheck(tok, dictionary):
 
 
 if __name__ == "__main__":
-    raw, _ = normEval.loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
     w2v = word2vec.get_vectors(os.path.join(DATA_PATH, "raw/train.norm"))
     with open(os.path.join(DATA_PATH, "interim/lexicon.txt"), "rb") as lf:
         lex = pickle.load(lf)
@@ -265,8 +265,8 @@ if __name__ == "__main__":
     batch_size = math.ceil(len(raw) / 64)
     for i in range(0, 64):
         p = Process(
-            # target=annotated_candidates_from_tweets,
-            target=candidates_from_tweets,
+            target=annotated_candidates_from_tweets,
+            # target=candidates_from_tweets,
             args=(
                 raw[i * batch_size : (i + 1) * batch_size],
                 w2v,
@@ -275,7 +275,7 @@ if __name__ == "__main__":
                 spellcheck_dict,
                 queue,
                 i,
-                # norm[i * batch_size : (i + 1) * batch_size],
+                norm[i * batch_size : (i + 1) * batch_size],
             ),
         )
         processes.append(p)
@@ -285,5 +285,5 @@ if __name__ == "__main__":
         train_data = pd.concat([train_data, queue.get()])
     for p in processes:
         p.join()
-    with open(os.path.join(DATA_PATH, "hpc/dev_unannotated.txt"), "w+") as f:
+    with open(os.path.join(DATA_PATH, "hpc/train_annotated.txt"), "w+") as f:
         train_data.to_csv(f)
