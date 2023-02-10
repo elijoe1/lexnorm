@@ -8,6 +8,7 @@ from multiprocessing import Process
 import gensim.models
 import numpy as np
 import pandas as pd
+import spylls.hunspell
 from spylls.hunspell import Dictionary
 
 from lexnorm.data import word2vec, norm_dict, normEval
@@ -35,44 +36,33 @@ from lexnorm.models.filtering import is_eligible
 #     :param tweet: to normalise, as list of tokens
 #     :return: a corresponding list of sets of normalisation candidates
 #     """
-#     candidates_list = []
-#     for raw_tweet in raw:
-#         tweet_candidates = []
-#         for i, tok in enumerate(raw_tweet):
-#             if tok == "rt":
-#                 # hard coded normalisation of 'rt' if followed by @mention following notebook 1.0 and 2015 annotation guideline 3.
-#                 # we can do this as 'rt' is a domain specific entity and normalisation is fairly deterministic (when in middle
-#                 # of tweet and not followed by @mention) and when normalised, always to 'retweet'
-#                 if 0 < i < len(raw_tweet) - 1 and raw_tweet[i + 1][0] != "@":
-#                     tweet_candidates.append(["retweet"])
-#                 else:
-#                     tweet_candidates.append([tok])
-#             elif is_eligible(tok):
-#                 candidates = set()
-#                 candidates = candidates.union(original_token(tok))
-#                 candidates = candidates.union(word_embeddings(tok, vectors))
-#                 candidates = candidates.union(spellcheck(tok, spellcheck_dict))
-#                 # obviously lookup on the train set will always produce the correct candidate (perhaps among others)!
-#                 candidates = candidates.union(lookup(tok, normalisations))
-#                 candidates = candidates.union(clipping(tok, lexicon))
-#                 candidates = candidates.union(split(tok, lexicon))
-#                 tweet_candidates.append(list(candidates))
-#             else:
-#                 tweet_candidates.append([tok])
-#         candidates_list.append(tweet_candidates)
-#     return candidates_list
 
 
 def annotated_candidates_from_tweets(
-    tweets,
-    vectors,
-    normalisations,
-    lexicon,
-    spellcheck_dictionary,
-    queue,
-    process,
-    gold,
-):
+    tweets: list[list[str]],
+    vectors: gensim.models.KeyedVectors,
+    normalisations: dict[str, Counter],
+    lexicon: set,
+    spellcheck_dictionary: spylls.hunspell.Dictionary,
+    queue: multiprocessing.Queue,
+    process: int,
+    gold: list[list[str]],
+) -> None:
+    """
+    Target for producing annotated training data, in the form of a dataframe of candidates and extracted features.
+    Can be parallelised as each tweet is independent. Training doesn't require any linking to the actual tokens,
+    as each candidate and extracted features is an independent example. However, 'process', 'tok', and 'tweet' can
+    do this if necessary. 'gold' is included as well as 'correct' to make analysis easier.
+
+    :param tweets: raw tweets
+    :param vectors: word2vec word embeddings for word_embeddings module
+    :param normalisations: normalisation dictionary for the norm_lookup module
+    :param lexicon: lexicon for the split and clipping modules
+    :param spellcheck_dictionary: for the spellcheck module
+    :param queue: to output dataframe into in a safe manner
+    :param process: process number for token identification
+    :param gold: normalised tweets for annotation
+    """
     all_candidates = pd.DataFrame()
     tweet_index = 0
     tok_index = 0
@@ -118,7 +108,7 @@ def candidates_from_tweets(
 
 def candidates_from_token(
     orig: str,
-    vectors: gensim.models.keyedvectors,
+    vectors: gensim.models.KeyedVectors,
     normalisations: dict[str, Counter],
     lexicon: set,
     spellcheck_dictionary: Dictionary,
