@@ -74,6 +74,7 @@ def annotated_candidates_from_tweets(
     gold,
 ):
     all_candidates = pd.DataFrame()
+    tweet_index = 0
     tok_index = 0
     for raw_tweet, norm_tweet in zip(tweets, gold):
         for raw_tok, norm_tok in zip(raw_tweet, norm_tweet):
@@ -84,10 +85,13 @@ def annotated_candidates_from_tweets(
                 candidates["correct"] = candidates.index.map(
                     lambda x: 1 if x == norm_tok else np.nan
                 )
-                candidates["raw_tok_index"] = f"{process}_{tok_index}"
+                candidates["process"] = process
+                candidates["tweet"] = tweet_index
+                candidates["tok"] = tok_index
                 candidates["gold"] = norm_tok
-                tok_index += 1
+            tok_index += 1
             all_candidates = pd.concat([all_candidates, candidates])
+        tweet_index += 1
     queue.put(all_candidates)
 
 
@@ -245,7 +249,7 @@ def spellcheck(tok, dictionary):
 
 
 if __name__ == "__main__":
-    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
+    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     w2v = word2vec.get_vectors(os.path.join(DATA_PATH, "raw/train.norm"))
     with open(os.path.join(DATA_PATH, "interim/lexicon.txt"), "rb") as lf:
         lex = pickle.load(lf)
@@ -276,5 +280,7 @@ if __name__ == "__main__":
         train_data = pd.concat([train_data, queue.get()])
     for p in processes:
         p.join()
-    with open(os.path.join(DATA_PATH, "hpc/train_annotated.txt"), "w+") as f:
+    with open(
+        os.path.join(DATA_PATH, "hpc/dev_annotated_with_train_info.txt"), "w+"
+    ) as f:
         train_data.to_csv(f)
