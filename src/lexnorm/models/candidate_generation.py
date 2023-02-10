@@ -96,19 +96,23 @@ def annotated_candidates_from_tweets(
 
 
 def candidates_from_tweets(
-    tweets, vectors, normalisations, lexicon, spellcheck_dictionary, queue
+    tweets, vectors, normalisations, lexicon, spellcheck_dictionary, queue, process
 ):
     all_candidates = pd.DataFrame()
+    tweet_index = 0
+    tok_index = 0
     for tweet in tweets:
         for tok in tweet:
-            all_candidates = pd.concat(
-                [
-                    all_candidates,
-                    candidates_from_token(
-                        tok, vectors, normalisations, lexicon, spellcheck_dictionary
-                    ),
-                ]
+            candidates = candidates_from_token(
+                tok, vectors, normalisations, lexicon, spellcheck_dictionary
             )
+            if not candidates.empty:
+                candidates["process"] = process
+                candidates["tweet"] = tweet_index
+                candidates["tok"] = tok_index
+            tok_index += 1
+            all_candidates = pd.concat([all_candidates, candidates])
+        tweet_index += 1
     queue.put(all_candidates)
 
 
@@ -143,7 +147,7 @@ def candidates_from_token(
         lambda x: 1 if is_subseq(orig, x) else np.nan
     )
     # copy across features of original word to each candidate as decision whether to normalize based solely upon the original word
-    # do we really want to copy same_order? done in MoNoise but suspicious...
+    # do we really want to copy same_order? done in MoNoise but suspicious...literally has no effect
     for feature in ["norms_seen", "in_lexicon", "same_order", "length"]:
         candidates[f"orig_{feature}"] = candidates.loc[orig][feature]
     # TODO internally calculated distance and rank for hunspell (if even possible)
@@ -249,7 +253,7 @@ def spellcheck(tok, dictionary):
 
 
 if __name__ == "__main__":
-    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    raw, _ = normEval.loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     w2v = word2vec.get_vectors(os.path.join(DATA_PATH, "raw/train.norm"))
     with open(os.path.join(DATA_PATH, "interim/lexicon.txt"), "rb") as lf:
         lex = pickle.load(lf)
@@ -261,7 +265,8 @@ if __name__ == "__main__":
     batch_size = math.ceil(len(raw) / 64)
     for i in range(0, 64):
         p = Process(
-            target=annotated_candidates_from_tweets,
+            # target=annotated_candidates_from_tweets,
+            target=candidates_from_tweets,
             args=(
                 raw[i * batch_size : (i + 1) * batch_size],
                 w2v,
@@ -270,7 +275,7 @@ if __name__ == "__main__":
                 spellcheck_dict,
                 queue,
                 i,
-                norm[i * batch_size : (i + 1) * batch_size],
+                # norm[i * batch_size : (i + 1) * batch_size],
             ),
         )
         processes.append(p)
@@ -280,7 +285,5 @@ if __name__ == "__main__":
         train_data = pd.concat([train_data, queue.get()])
     for p in processes:
         p.join()
-    with open(
-        os.path.join(DATA_PATH, "hpc/dev_annotated_with_train_info.txt"), "w+"
-    ) as f:
+    with open(os.path.join(DATA_PATH, "hpc/dev_unannotated.txt"), "w+") as f:
         train_data.to_csv(f)
