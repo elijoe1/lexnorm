@@ -1,9 +1,6 @@
 from lexnorm.evaluation import condition_normalisation
 from collections import Counter
-from lexnorm.definitions import DATA_PATH
-from lexnorm.data import normEval
 from lexnorm.data import baseline
-from lexnorm.models import filtering
 from lexnorm.data import norm_dict
 import os
 

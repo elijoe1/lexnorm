@@ -1,4 +1,4 @@
-from lexnorm.models.filtering import is_eligible
+from lexnorm.generate_extract.filtering import is_eligible
 
 
 def test_is_eligible():

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from lexnorm.models.filtering import is_eligible
+from lexnorm.generate_extract.filtering import is_eligible
 
 
 def prep_train(annotated_data):
