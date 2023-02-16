@@ -22,6 +22,7 @@ def train(train_X, train_y, output_file):
 
 
 def predict(model, features, data):
+    # TODO: if tie for highest probability, just chooses arbitrarily
     probs = model.predict_proba(features)
     data["probs"] = probs[:, 1]
     preds = data.sort_values("probs", ascending=False).drop_duplicates(
@@ -42,4 +43,4 @@ if __name__ == "__main__":
     dev = pd.read_csv(os.path.join(DATA_PATH, "hpc/dev_unannotated.txt"), index_col=0)
     pred_tokens = predict(clf, dev_X, dev)
     predictions = normalise(raw, pred_tokens)
-    evaluate(raw, norm, predictions)
+    evaluate(raw, norm, predictions, verbose=True)

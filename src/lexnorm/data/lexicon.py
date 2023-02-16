@@ -32,7 +32,7 @@ def build(
     verbose: bool = False,
 ) -> set[str]:
     """
-    Create word set from SCOWL word lists extending perl script 'mk-list'
+    Create (lowercase) word set from SCOWL word lists extending perl script 'mk-list'
     @param languages: including english, american, australian, canadian, british, british_z.
     english should always be included.
     @param subsets: within each language. Including abbreviations, contractions, proper-names, upper, words
