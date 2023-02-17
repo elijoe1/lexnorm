@@ -4,8 +4,9 @@ import pandas as pd
 from joblib import dump, load
 from sklearn.ensemble import RandomForestClassifier
 
-from lexnorm.data.normEval import loadNormData, evaluate
+from lexnorm.data.normEval import loadNormData
 from lexnorm.definitions import DATA_PATH
+from lexnorm.evaluation.models import evaluate
 from lexnorm.models.normalise import prep_train, prep_test, normalise
 
 
@@ -24,23 +25,24 @@ def train(train_X, train_y, output_file):
 def predict(model, features, data):
     # TODO: if tie for highest probability, just chooses arbitrarily
     probs = model.predict_proba(features)
+    data = data.copy()
     data["probs"] = probs[:, 1]
-    preds = data.sort_values("probs", ascending=False).drop_duplicates(
+    pred_df = data.sort_values("probs", ascending=False).drop_duplicates(
         ["process", "tweet", "tok"]
     )
-    pred_tokens = preds.sort_values(["process", "tweet", "tok"]).index.tolist()
-    return pred_tokens
+    predictions = pred_df.sort_values(["process", "tweet", "tok"]).index.tolist()
+    return predictions
 
 
 if __name__ == "__main__":
-    # train(
-    #     *prep_train(os.path.join(DATA_PATH, "hpc/train_annotated.txt")),
-    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
-    # )
+    train(
+        *prep_train(os.path.join(DATA_PATH, "hpc/train_processed_annotated.txt")),
+        os.path.join(DATA_PATH, "../models/rf.joblib"),
+    )
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
-    dev_X = prep_test(os.path.join(DATA_PATH, "hpc/dev_unannotated.txt"))
-    dev = pd.read_csv(os.path.join(DATA_PATH, "hpc/dev_unannotated.txt"), index_col=0)
+    dev_X = prep_test(os.path.join(DATA_PATH, "hpc/dev_processed.txt"))
+    dev = pd.read_csv(os.path.join(DATA_PATH, "hpc/dev_processed.txt"), index_col=0)
     pred_tokens = predict(clf, dev_X, dev)
     predictions = normalise(raw, pred_tokens)
-    evaluate(raw, norm, predictions, verbose=True)
+    evaluate(raw, norm, predictions)

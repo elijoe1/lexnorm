@@ -21,9 +21,9 @@ def spellcheck(tok, dictionary):
     rank = 1
     for c in dictionary.suggest(tok):
         # Previously, checked if c.islower() before using.
-        # I think it makes more sense to generate all suggestions and make them lowercase.
+        # I think it makes more sense to generate all suggestions.
         # Obviously we have lost some information from the input being lowercase, but we can't do anything about that.
-        candidates.loc[c.lower()] = {"spellcheck_rank": rank}
+        candidates.loc[c] = {"spellcheck_rank": rank}
         rank += 1
     return candidates
 
@@ -80,25 +80,18 @@ def word_embeddings(tok, vectors, threshold=0):
     candidates = pd.DataFrame(columns=["cosine_to_orig", "embeddings_rank"])
     cand_dict = {}
     if tok in vectors:
-        # Previously checked if c was lower before returning. But I think it's better to generate all and make lowercase.
-        cand_list = [
-            (c[0].lower(), c[1])
-            for c in vectors.similar_by_vector(tok, topn=10)
-            # This is the only module that can produce ineligible suggestions, so this check is needed.
-            if is_eligible(c[0]) and c[1] >= threshold
-        ]
-        # Get the highest cosine similarity for each lowercase suggestion (needed as several suggestions may lowercase
-        # to the same thing.
-        for cand in cand_list:
-            if cand[1] > cand_dict.get(cand[0], 0):
-                cand_dict[cand[0]] = cand[1]
-    for rank, c in enumerate(
-        sorted(cand_dict.items(), key=lambda x: x[1], reverse=True)
-    ):
-        k, v = c
-        candidates.loc[k] = {
-            "cosine_to_orig": v,
-            # So that 0 can be used to fill NaN values. This may be unnecessary as cosine similarity is already being used as a feature.
-            "embeddings_rank": rank + 1,
-        }
+        # Previously checked if c was lower before including. But I think it's better to generate all and make lowercase
+        # if necessary, adding feature to indicate if this was done (and disallowing if this would create the original token)
+        rank = 1
+        for c in vectors.similar_by_vector(tok, topn=10):
+            # This check is needed as can produce ineligible suggestions
+            if is_eligible(c[0]) and c[1] >= threshold:
+                cand_dict[c[0]] = {
+                    "cosine_to_orig": c[1],
+                    # So that 0 can be used to fill NaN values. This may be unnecessary as cosine similarity is already being used as a feature.
+                    "embeddings_rank": rank,
+                }
+                rank += 1
+    for cand, features in cand_dict.items():
+        candidates.loc[cand] = features
     return candidates
