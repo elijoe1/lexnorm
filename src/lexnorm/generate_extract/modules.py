@@ -23,7 +23,7 @@ def spellcheck(tok, dictionary):
         # Previously, checked if c.islower() before using.
         # I think it makes more sense to generate all suggestions and make them lowercase.
         # Obviously we have lost some information from the input being lowercase, but we can't do anything about that.
-        candidates.loc[c.lower()] = {"from_spellcheck": 1, "spellcheck_rank": rank}
+        candidates.loc[c.lower()] = {"spellcheck_rank": rank}
         rank += 1
     return candidates
 
@@ -52,7 +52,7 @@ def clipping(tok, lex):
     if len(tok) < 2:
         return candidates
     for c in lex:
-        if c.startswith(tok):
+        if c.startswith(tok) and c != tok:
             candidates.loc[c] = {"from_clipping": 1}
     return candidates
 

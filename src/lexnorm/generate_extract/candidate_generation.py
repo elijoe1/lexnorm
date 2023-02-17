@@ -30,7 +30,8 @@ def candidates_from_tweets(
     Target for producing a dataframe of candidates and extracted features. Candidates are produced for each raw token,
     and features are extracted. This be done in parallel as each tweet is independent. Training doesn't require any
     linking to the actual tokens, as each candidate/feature realisation is an independent example. However,
-    'process', 'tok', and 'tweet' can do this for analysis. 'gold' is included for all candidates to make analysis easier.
+    'process', 'tok', and 'tweet' can do this for analysis. 'gold' and 'raw' are included for each candidate
+     to aid analysis.
 
     :param tweets: raw tweets
     :param vectors: word2vec word embeddings for word_embeddings module
@@ -46,18 +47,19 @@ def candidates_from_tweets(
     # TODO many to one normalisations?
     all_candidates = pd.DataFrame()
     tweet_index = 0
-    tok_index = 0
     for raw_tweet, norm_tweet in zip(tweets, gold if gold is not None else tweets):
+        tok_index = 0
         for raw_tok, norm_tok in zip(raw_tweet, norm_tweet):
             candidates = candidates_from_token(
                 raw_tok, vectors, normalisations, lexicon, spellcheck_dictionary
             )
             if not candidates.empty:
+                candidates["raw"] = raw_tok
                 if gold is not None:
+                    candidates["gold"] = norm_tok
                     candidates["correct"] = candidates.index.map(
                         lambda x: 1 if x == norm_tok else np.nan
                     )
-                    candidates["gold"] = norm_tok
                 candidates["process"] = process
                 candidates["tweet"] = tweet_index
                 candidates["tok"] = tok_index
