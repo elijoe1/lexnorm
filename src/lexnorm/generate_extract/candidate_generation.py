@@ -88,7 +88,7 @@ def candidates_from_token(
     # Can set missing values to NaN and fill later as this is automatically picked up by the random forest
     # This wil NOT be the case for other models e.g. logistic regression.
     def is_subseq(x, y):
-        iterator = iter(y)
+        iterator = iter(y.lower())
         return all(c in iterator for c in x)
 
     # Generate/fill features
@@ -98,7 +98,7 @@ def candidates_from_token(
         else np.nan
     )
     candidates["in_lexicon"] = candidates.index.map(
-        lambda x: 1 if x in lexicon else np.nan
+        lambda x: 1 if x.lower() in lexicon else np.nan
     )
     candidates["length"] = candidates.index.map(lambda x: len(x))
     candidates["same_order"] = candidates.index.map(

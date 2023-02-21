@@ -23,8 +23,11 @@ def spellcheck(tok, dictionary):
         # Previously, checked if c.islower() before using.
         # I think it makes more sense to generate all suggestions.
         # Obviously we have lost some information from the input being lowercase, but we can't do anything about that.
-        candidates.loc[c] = {"spellcheck_rank": rank}
-        rank += 1
+        # Check for ineligible suggestions as these are never the correct normalisation
+        # Testing with lowercase only again:
+        if is_eligible(c) and c.islower():
+            candidates.loc[c] = {"spellcheck_rank": rank}
+            rank += 1
     return candidates
 
 
@@ -81,11 +84,12 @@ def word_embeddings(tok, vectors, threshold=0):
     cand_dict = {}
     if tok in vectors:
         # Previously checked if c was lower before including. But I think it's better to generate all and make lowercase
-        # if necessary, adding feature to indicate if this was done (and disallowing if this would create the original token)
+        # if predicted
         rank = 1
         for c in vectors.similar_by_vector(tok, topn=10):
             # This check is needed as can produce ineligible suggestions
-            if is_eligible(c[0]) and c[1] >= threshold:
+            # Trying lowercase only again:
+            if is_eligible(c[0]) and c[1] >= threshold and c[0].islower():
                 cand_dict[c[0]] = {
                     "cosine_to_orig": c[1],
                     # So that 0 can be used to fill NaN values. This may be unnecessary as cosine similarity is already being used as a feature.

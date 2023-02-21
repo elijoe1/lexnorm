@@ -58,10 +58,10 @@ if __name__ == "__main__":
     process_data(
         os.path.join(DATA_PATH, "raw/train.norm"),
         os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "hpc/train_processed_annotated.txt"),
+        os.path.join(DATA_PATH, "hpc/train_processed_annotated_nocap.txt"),
     )
     process_data(
         os.path.join(DATA_PATH, "raw/dev.norm"),
         os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "hpc/dev_processed.txt"),
+        os.path.join(DATA_PATH, "hpc/dev_processed_nocap.txt"),
     )
