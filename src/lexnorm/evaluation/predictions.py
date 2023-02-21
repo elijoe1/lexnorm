@@ -2,8 +2,8 @@ from collections import Counter
 
 from lexnorm.data.normEval import err
 
-
-def evaluate(raw, gold, pred):
+# ADAPTED FROM CODE IN TASK REPOSITORY (normEval.py)
+def evaluate_predictions(raw, gold, pred):
     cor = 0
     changed = 0
     total = 0
@@ -32,6 +32,7 @@ def evaluate(raw, gold, pred):
             if wordGold == wordPred:
                 cor += 1
             else:
+                # TODO give tweet and token index of errors for comparison
                 errors.update([(wordRaw, wordGold, wordPred)])
             total += 1
 
@@ -45,3 +46,6 @@ def evaluate(raw, gold, pred):
     print(errors.most_common())
 
     return lai, accuracy, error, errors
+
+
+# TODO: for two classifiers, compare predictions

@@ -85,6 +85,7 @@ def candidates_from_token(
     # Obviously the norm_lookup module will always produce the correct candidate on the data it was constructed from
     candidates = candidates.combine_first(norm_lookup(orig, normalisations))
     candidates = candidates.combine_first(word_embeddings(orig, vectors))
+
     # Can set missing values to NaN and fill later as this is automatically picked up by the random forest
     # This wil NOT be the case for other models e.g. logistic regression.
     def is_subseq(x, y):
@@ -113,44 +114,3 @@ def candidates_from_token(
     # TODO frequency of candidate in train - that is sum of all normalisations seen?
     # TODO percentage of normalisations seen?
     return candidates
-
-
-# if __name__ == "__main__":
-#     raw, norm = normEval.loadNormData(
-#         os.path.join(DATA_PATH, "../../../data/raw/train.norm")
-#     )
-#     w2v = word2vec.get_vectors(os.path.join(DATA_PATH, "../../../data/raw/train.norm"))
-#     with open(os.path.join(DATA_PATH, "../../../data/interim/lexicon.txt"), "rb") as lf:
-#         lex = pickle.load(lf)
-#     norms = norm_dict.construct(os.path.join(DATA_PATH, "../../../data/raw/train.norm"))
-#     spellcheck_dict = Dictionary.from_files("en_US")
-#     queue = multiprocessing.Queue()
-#     processes = []
-#     train_data = pd.DataFrame()
-#     batch_size = math.ceil(len(raw) / 64)
-#     for i in range(0, 64):
-#         p = Process(
-#             target=annotated_candidates_from_tweets,
-#             # target=candidates_from_tweets,
-#             args=(
-#                 raw[i * batch_size : (i + 1) * batch_size],
-#                 w2v,
-#                 norms,
-#                 lex,
-#                 spellcheck_dict,
-#                 queue,
-#                 i,
-#                 norm[i * batch_size : (i + 1) * batch_size],
-#             ),
-#         )
-#         processes.append(p)
-#     for p in processes:
-#         p.start()
-#     for p in processes:
-#         train_data = pd.concat([train_data, queue.get()])
-#     for p in processes:
-#         p.join()
-#     with open(
-#         os.path.join(DATA_PATH, "../../../data/hpc/train_annotated.txt"), "w+"
-#     ) as f:
-#         train_data.to_csv(f)

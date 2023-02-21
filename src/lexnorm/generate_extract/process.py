@@ -14,7 +14,7 @@ from lexnorm.generate_extract.candidate_generation import candidates_from_tweets
 
 def process_data(input_path: str, data_path: str, output_path: str, cores: int = 64):
     """
-    spawns cores processes and gives each an equal number of tweets to process. output into multiprocessing queue, then
+    spawns [cores] processes and gives each an equal number of tweets to process. output into multiprocessing queue, then
     when all processes finish, empty queue and write to csv
     """
     raw, norm = normEval.loadNormData(input_path)
@@ -52,6 +52,29 @@ def process_data(input_path: str, data_path: str, output_path: str, cores: int =
         p.join()
     with open(output_path, "w+") as f:
         output.to_csv(f)
+
+
+def create_index(dataframe, output_path=None):
+    """
+    Replaces "process", "tweet", "tok" columns with "tok_id" column which gives an index into the list of eligible tokens
+    in the dataset used to produce the dataframe of the corresponding raw token.
+
+    :param dataframe: A dataframe of candidates and extracted features.
+    :param output_path: A path to save the new dataframe, if desired.
+    :return: The new dataframe.
+    """
+    data = dataframe.copy()
+    data = data.sort_values(["process", "tweet", "tok"])
+    data["tok_id"] = (
+        data.sort_values(["process", "tweet", "tok"])
+        .groupby(["process", "tweet", "tok"])
+        .ngroup()
+    )
+    data = data.drop(["process", "tweet", "tok"], axis=1)
+    if output_path is not None:
+        with open(output_path, "w+") as f:
+            data.to_csv(f)
+    return data
 
 
 if __name__ == "__main__":

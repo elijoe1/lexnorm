@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 from lexnorm.data.normEval import loadNormData
 from lexnorm.definitions import DATA_PATH
-from lexnorm.evaluation.models import evaluate
+from lexnorm.evaluation.predictions import evaluate_predictions
 from lexnorm.models.normalise import prep_train, prep_test, normalise
 
 
@@ -36,13 +36,18 @@ def predict(model, features, data):
 
 if __name__ == "__main__":
     train(
-        *prep_train(os.path.join(DATA_PATH, "hpc/train_processed_annotated.txt")),
+        *prep_train(os.path.join(DATA_PATH, "hpc/train_processed_annotated_nocap.txt")),
         os.path.join(DATA_PATH, "../models/rf.joblib"),
     )
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
-    dev_X = prep_test(os.path.join(DATA_PATH, "hpc/dev_processed.txt"))
-    dev = pd.read_csv(os.path.join(DATA_PATH, "hpc/dev_processed.txt"), index_col=0)
+    dev_X = prep_test(os.path.join(DATA_PATH, "hpc/dev_processed_nocap.txt"))
+    dev = pd.read_csv(
+        os.path.join(DATA_PATH, "hpc/dev_processed_nocap.txt"),
+        index_col=0,
+        keep_default_na=False,
+        na_values="",
+    )
     pred_tokens = predict(clf, dev_X, dev)
     predictions = normalise(raw, pred_tokens)
-    evaluate(raw, norm, predictions)
+    evaluate_predictions(raw, norm, predictions)
