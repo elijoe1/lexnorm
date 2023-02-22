@@ -2,6 +2,7 @@ from collections import Counter
 
 from lexnorm.data.normEval import err
 
+
 # ADAPTED FROM CODE IN TASK REPOSITORY (normEval.py)
 def evaluate_predictions(raw, gold, pred):
     cor = 0
