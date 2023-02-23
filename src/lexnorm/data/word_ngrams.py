@@ -36,10 +36,10 @@ def counter_from_pickle(counter_path):
 
 
 if __name__ == "__main__":
-    binary_to_pickle(
-        os.path.join(DATA_PATH, "interim/twitter_ngrams.1"),
-        os.path.join(DATA_PATH, "processed/twitter_unigram_counter.pickle"),
-    )
+    # binary_to_pickle(
+    #     os.path.join(DATA_PATH, "interim/twitter_ngrams.1"),
+    #     os.path.join(DATA_PATH, "processed/twitter_unigram_counter.pickle"),
+    # )
     binary_to_pickle(
         os.path.join(DATA_PATH, "interim/twitter_ngrams.2"),
         os.path.join(DATA_PATH, "processed/twitter_bigram_counter.pickle"),
@@ -52,3 +52,7 @@ if __name__ == "__main__":
         os.path.join(DATA_PATH, "interim/wiki_ngrams.2"),
         os.path.join(DATA_PATH, "processed/wiki_bigram_counter.pickle"),
     )
+    # counter = counter_from_pickle(
+    #     os.path.join(DATA_PATH, "processed/twitter_unigram_counter.pickle")
+    # )
+    # print(counter.most_common(10))
