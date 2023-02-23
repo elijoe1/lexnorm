@@ -55,4 +55,4 @@ if __name__ == "__main__":
     # counter = counter_from_pickle(
     #     os.path.join(DATA_PATH, "processed/wiki_unigram_counter.pickle")
     # )
-    # print(counter["</s>"])
+    # print(counter["<s>"])

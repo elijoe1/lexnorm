@@ -41,12 +41,16 @@ def is_eligible(tok: str, allow_special: bool = False) -> bool:
 
     Under this definition, all raw and normalised phrases in the train and dev sets are eligible, as desired.
 
-    :param allow_special: if the special characters <S>, </S> should be allowed (used in ngrams from VDG)
+    :param allow_special: if the special tokens <S>, </S> should be allowed (used in ngrams from VDG)
     :param tok: token to check
     :return: if eligible for normalisation/as a candidate
     """
-    if tok in ["<S>", "</S>", "<s>", "</s>"]:
-        return allow_special
+    if allow_special and tok in ["<S>", "<s>", "</S>", "</s>"]:
+        return True
+    if allow_special and tok.startswith(("<S>", "<s>")):
+        return is_eligible(tok[3:])
+    elif allow_special and tok.endswith(("</S>", "</s>")):
+        return is_eligible(tok[:-4])
     elif (
         any(
             not (
