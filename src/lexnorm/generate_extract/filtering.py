@@ -33,10 +33,10 @@ def is_eligible(tok: str) -> bool:
     """
     Determines if a token is eligible to be normalised under the dataset guidelines.
 
-    Checks if token contains forbidden characters (anything but numbers, letters, and internal apostrophes)
+    Checks if token contains forbidden characters (anything but numbers, letters, spaces, and internal apostrophes)
     as described in 2015 guideline 3 (interpreting apostrophes 'used in contraction' vs 'as single quote' as internal
     vs external respectively). Also checks if token is 'rt' (domain specific entity handled specially during generation).
-    Allows whitespace in token, as this is never present in the raw data, but allows for components of normalisation pairs
+    Allows whitespace as this is never present in the raw data, but allows for components of normalisation pairs
     for one-to-many and many-to-one normalisations to be seen as eligible.
 
     Under this definition, all raw and normalised phrases in the train and dev sets are eligible, as desired.

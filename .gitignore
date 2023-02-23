@@ -130,3 +130,7 @@ dmypy.json
 
 # too large - contains old (w2v_100) and new (w2v_400) twitter embeddings from vdg
 monoise_data/
+# too large - contains test runs of candidate generation/feature extraction from HPC
+hpc/
+# too large - contains pickled ngram counters
+processed
