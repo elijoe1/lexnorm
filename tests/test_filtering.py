@@ -15,15 +15,11 @@ def test_is_eligible():
             '"asd',
         ]
     ] == [True, False, True, True, True, False, True, False]
-    # assert list_eligible(["rt", "rt", "@test", "rt", "test", "@test", "rt"]) == [
-    #     False,
-    #     False,
-    #     False,
-    #     True,
-    #     True,
-    #     False,
-    #     True,
-    # ]
+    assert not any([is_eligible(c) for c in ["茶", "<S>", "/s", "</s>"]])
+    assert all(
+        [is_eligible(c, allow_special=True) for c in ["<S>", "<s>", "</S>", "</s>"]]
+    )
+    assert is_eligible("abcdefghijklmnopqrstuvwxyz' 012456789")
     assert [
         is_eligible(c)
         for c in ["can't", "wo'nt", "''", "'", "asdklj'''as", "asd'", "'sadf'", "'dsa"]

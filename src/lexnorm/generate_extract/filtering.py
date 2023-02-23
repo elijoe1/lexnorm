@@ -29,7 +29,7 @@
 #     return eligible_list
 
 
-def is_eligible(tok: str) -> bool:
+def is_eligible(tok: str, allow_special: bool = False) -> bool:
     """
     Determines if a token is eligible to be normalised under the dataset guidelines.
 
@@ -41,11 +41,22 @@ def is_eligible(tok: str) -> bool:
 
     Under this definition, all raw and normalised phrases in the train and dev sets are eligible, as desired.
 
+    :param allow_special: if the special characters <S>, </S> should be allowed (used in ngrams from VDG)
     :param tok: token to check
-    :return: if eligible for normalisation
+    :return: if eligible for normalisation/as a candidate
     """
-    if (
-        any(not (char.isalnum() or char == "'" or char == " ") for char in tok)
+    if tok in ["<S>", "</S>", "<s>", "</s>"]:
+        return allow_special
+    elif (
+        any(
+            not (
+                # ascii check needed to prevent chinese characters and such which are considered alphabetic
+                (char.isalnum() and char.isascii())
+                or char == "'"
+                or char == " "
+            )
+            for char in tok
+        )
         or tok[0] == "'"
         or tok[-1] == "'"
     ):
