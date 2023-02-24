@@ -11,11 +11,10 @@ def binary_to_pickle(ngram_path, output_path):
     with open(ngram_path) as f:
         for line in f:
             ngram = line.strip().split("\t")
-            if len(ngram) < 2:
+            if len(ngram) != 2:
                 continue
-            elif is_eligible(ngram[0], allow_special=True):
-                # merge all cased versions of token as everything is lower-cased in our system
-                ngrams.update({ngram[0].lower(): int(ngram[1])})
+            # merge all cased versions of token as everything is lower-cased in our system - no other way to do this?
+            ngrams.update({ngram[0].lower(): int(ngram[1])})
     with open(output_path, "wb+") as f:
         pickle.dump(ngrams, f)
 
@@ -24,15 +23,6 @@ def counter_from_pickle(counter_path):
     with open(counter_path, "rb") as f:
         counter = pickle.load(f)
     return counter
-
-
-# def get_bigram_probs(left_neighbour, token, right_neighbour, unigram_counter, bigram_counter):
-#     # applying laplacian smoothing
-#     unigram_counter.get(token, 0) + 1
-#
-#     left_prob = bigram_counter[" ".join([left_neighbour, token])]
-#     unigram_counter[tokens[0]] /
-#     return counter
 
 
 if __name__ == "__main__":
@@ -53,6 +43,6 @@ if __name__ == "__main__":
         os.path.join(DATA_PATH, "processed/wiki_bigram_counter.pickle"),
     )
     # counter = counter_from_pickle(
-    #     os.path.join(DATA_PATH, "processed/wiki_unigram_counter.pickle")
+    #     os.path.join(DATA_PATH, "processed/wiki_bigram_counter.pickle")
     # )
-    # print(counter["<s>"])
+    # print(counter["the </s>"])

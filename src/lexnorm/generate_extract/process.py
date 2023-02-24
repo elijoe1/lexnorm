@@ -2,6 +2,7 @@ import math
 import multiprocessing
 import os
 import pickle
+from collections import Counter
 from multiprocessing import Process
 
 import pandas as pd
@@ -54,6 +55,28 @@ def process_data(input_path: str, data_path: str, output_path: str, cores: int =
         output.to_csv(f)
 
 
+def add_ngram_features(dataframe, ngram_counters: list[Counter]):
+    """
+    Adds ngram features to a dataframe
+
+    Issue: unseen unigrams in the test set. This is presumed quite unlikely as the models are so large, but still
+    requires thought. Hacky solution done by VDG is to give unseen unigrams a frequency of 1.
+    TODO: investigate the frequency of this in the data.
+
+    :param dataframe: Dataframe to add ngram features to
+    :param ngram_counters: A list of four counters: twitter uni and bigrams, wikipedia uni and bigrams
+    """
+    dataframe["twitter_uni"] = dataframe.index.map(
+        lambda x: ngram_counters[0].get(x, 1)
+    )
+    dataframe["twitter_bi_prev"] = dataframe.apply(
+        lambda x: ngram_counters[1].get(" ".join([x.prev, x.index])) / x.twitter_uni
+    )
+    dataframe["twitter_bi_next"] = dataframe.apply(
+        lambda x: ngram_counters[1].get(" ".join([x.index, x.next])) / x.twitter_uni
+    )
+
+
 def create_index(dataframe, output_path=None):
     """
     Replaces "process", "tweet", "tok" columns with "tok_id" column which gives an index into the list of eligible tokens
@@ -81,10 +104,10 @@ if __name__ == "__main__":
     process_data(
         os.path.join(DATA_PATH, "raw/train.norm"),
         os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "hpc/train_processed_annotated_nocap.txt"),
+        os.path.join(DATA_PATH, "hpc/train_processed_annotated_nocap_neighbours.txt"),
     )
     process_data(
         os.path.join(DATA_PATH, "raw/dev.norm"),
         os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "hpc/dev_processed_nocap.txt"),
+        os.path.join(DATA_PATH, "hpc/dev_processed_nocap_neighbours.txt"),
     )

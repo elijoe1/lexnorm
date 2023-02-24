@@ -49,12 +49,17 @@ def candidates_from_tweets(
     tweet_index = 0
     for raw_tweet, norm_tweet in zip(tweets, gold if gold is not None else tweets):
         tok_index = 0
-        for raw_tok, norm_tok in zip(raw_tweet, norm_tweet):
+        for i, tok_pair in enumerate(zip(raw_tweet, norm_tweet)):
+            raw_tok, norm_tok = tok_pair
             candidates = candidates_from_token(
                 raw_tok, vectors, normalisations, lexicon, spellcheck_dictionary
             )
             if not candidates.empty:
                 candidates["raw"] = raw_tok
+                candidates["prev"] = "<s>" if i == 0 else raw_tweet[i - 1]
+                candidates["next"] = (
+                    "</s>" if i == len(raw_tweet) - 1 else raw_tweet[i + 1]
+                )
                 if gold is not None:
                     candidates["gold"] = norm_tok
                     candidates["correct"] = candidates.index.map(
