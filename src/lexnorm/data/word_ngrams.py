@@ -45,4 +45,4 @@ if __name__ == "__main__":
     # counter = counter_from_pickle(
     #     os.path.join(DATA_PATH, "processed/wiki_bigram_counter.pickle")
     # )
-    # print(counter["the </s>"])
+    # print(counter.most_common(40))
