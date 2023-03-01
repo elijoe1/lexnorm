@@ -12,6 +12,7 @@ from lexnorm.data import normEval, word2vec, norm_dict
 from lexnorm.data.word_ngrams import counter_from_pickle
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.candidate_generation import candidates_from_tweets
+from lexnorm.generate_extract.filtering import is_eligible
 
 
 def process_data(input_path: str, data_path: str, output_path: str, cores: int = 64):
@@ -126,7 +127,7 @@ def add_ngram_features(dataframe_path, ngram_counter_path, output_path=None):
 def create_index(dataframe, output_path=None):
     """
     Replaces "process", "tweet", "tok" columns with "tok_id" column which gives an index into the list of eligible tokens
-    in the dataset used to produce the dataframe of the corresponding raw token.
+    in the dataset used to produce the dataframe of the corresponding raw token. (NOTE: not index into list of all tokens)
 
     :param dataframe: A dataframe of candidates and extracted features.
     :param output_path: A path to save the new dataframe, if desired.
@@ -144,6 +145,26 @@ def create_index(dataframe, output_path=None):
         with open(output_path, "w+") as f:
             data.to_csv(f)
     return data
+
+
+def link_to_gold(dataframe, gold_path):
+    """
+    Adds "gold" column to candidates dataframe with "tok_id" column by getting list of normalisations of eligible tokens using
+    gold_path, and using tok_id as an index into the list. This is useful for analysis.
+
+    :param dataframe: Dataframe to add gold column to
+    :param gold_path: Path to data to link gold normalisations from
+    :return:
+    """
+    dataframe = dataframe.copy()
+    raw, norm = normEval.loadNormData(gold_path)
+    eligible_norms = []
+    for raw_tweet, norm_tweet in zip(raw, norm):
+        for raw_tok, norm_tok in zip(raw_tweet, norm_tweet):
+            if is_eligible(raw_tok):
+                eligible_norms.append(norm_tok)
+    dataframe["gold"] = dataframe.apply(lambda x: eligible_norms[x.tok_id], axis=1)
+    return dataframe
 
 
 if __name__ == "__main__":

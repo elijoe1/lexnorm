@@ -3,37 +3,46 @@ import pandas as pd
 from lexnorm.generate_extract.filtering import is_eligible
 
 
-def prep_train(annotated_data):
+def prep_train(annotated_dataframe):
     # na_values specified as pandas would otherwise detect candidate 'NaN' as NaN rather than keeping as the string
-    train = pd.read_csv(
-        annotated_data, index_col=0, keep_default_na=False, na_values=""
-    )
-    train_X = train.drop(
+    train_X = annotated_dataframe.drop(
         [
             "correct",
             "raw",
             "gold",
+            "prev",
+            "next",
             "process",
             "tweet",
             "tok",
+            # "twitter_uni",
+            # "twitter_bi_prev",
+            # "twitter_bi_next",
+            # "wiki_uni",
+            # "wiki_bi_prev",
+            # "wiki_bi_next",
         ],
         axis=1,
-    )
-    train_y = train.fillna(0)["correct"]
-    train_X.fillna(0, inplace=True)
+    ).fillna(0)
+    train_y = annotated_dataframe.fillna(0)["correct"]
     return train_X, train_y
 
 
-def prep_test(unannotated_data):
-    test = pd.read_csv(
-        unannotated_data, index_col=0, keep_default_na=False, na_values=""
-    )
-    test_X = test.drop(
+def prep_test(unannotated_dataframe):
+    test_X = unannotated_dataframe.drop(
         [
             "raw",
+            "prev",
+            "next",
             "process",
             "tweet",
             "tok",
+            # "twitter_uni",
+            # "twitter_bi_prev",
+            # "twitter_bi_next",
+            # "wiki_uni",
+            # "wiki_bi_prev",
+            # "wiki_bi_next",
         ],
         axis=1,
     )
@@ -41,14 +50,15 @@ def prep_test(unannotated_data):
     return test_X
 
 
-def normalise(raw, pred_toks):
-    pred_tokens_iter = iter(pred_toks)
+def normalise(raw, pred_toks: dict):
+    tok_id = -1
     pred_tweets = []
     for tweet in raw:
         pred_tweet = []
         for i, tok in enumerate(tweet):
             if is_eligible(tok):
-                pred = next(pred_tokens_iter)
+                tok_id += 1
+                pred = pred_toks.get(tok_id, tok)
                 pred_tweet.append(pred.lower())
             elif tok == "rt" and 0 < i < len(tweet) - 1 and tweet[i + 1][0] != "@":
                 # hard coded normalisation of 'rt' if followed by @mention following notebook 1.0 and 2015 annotation guideline 3.
