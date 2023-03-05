@@ -24,5 +24,5 @@ if __name__ == "__main__":
     concatenate(
         "raw/train.norm",
         "raw/dev.norm",
-        "interim/train.txt",
+        "processed/combined.txt",
     )

@@ -4,13 +4,14 @@ import pandas as pd
 from joblib import dump, load
 from sklearn.ensemble import RandomForestClassifier
 
+from lexnorm.data.baseline import mfr
 from lexnorm.data.normEval import loadNormData
 from lexnorm.definitions import DATA_PATH
 from lexnorm.evaluation.predictions import evaluate_predictions
 from lexnorm.generate_extract.process import create_index
 from lexnorm.models.normalise import prep_train, prep_test, normalise
 
-
+# TODO: make train and predict able to take dataframe not just path for cross validation
 def train(data_path, output_file):
     data = pd.read_csv(
         data_path, index_col=0, keep_default_na=False, na_values=""
@@ -64,15 +65,20 @@ def predict_normalisations(dataframe, threshold=0.5):
 
 
 if __name__ == "__main__":
-    # TODO as random state fixed, shuffling dataset can hugely change performance metric - perhaps cross validation comes in useful here?
-    train(
-        os.path.join(DATA_PATH, "hpc/train_ngrams.txt"),
-        os.path.join(DATA_PATH, "../models/rf.joblib"),
-    )
+    # TODO as random state fixed, shuffling dataset can hugely change performance metric -
+    #  perhaps cross validation comes in useful here?
+    # train(
+    #     os.path.join(DATA_PATH, "hpc/train_ngrams.txt"),
+    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
+    # )
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
     pred_tokens = predict_normalisations(
-        predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt"))
+        predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt")), threshold=0.5
     )
     predictions = normalise(raw, pred_tokens)
     evaluate_predictions(raw, norm, predictions)
+    # TODO put this into evaluate_predictions as baseline
+    # raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
+    # dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    # evaluate_predictions(dev_raw, dev_norm, mfr(raw, norm, dev_raw))

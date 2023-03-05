@@ -15,7 +15,7 @@ def binary_to_pickle(ngram_path, output_path):
                 continue
             # merge all cased versions of token as everything is lower-cased in our system - no other way to do this?
             ngrams.update({ngram[0].lower(): int(ngram[1])})
-    with open(output_path, "wb+") as f:
+    with open(output_path, "wb") as f:
         pickle.dump(ngrams, f)
 
 

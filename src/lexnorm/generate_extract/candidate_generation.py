@@ -43,7 +43,6 @@ def candidates_from_tweets(
     :param gold: normalised tweets for annotation, if annotated training data is desired
     """
     # TODO ability to exclude specific generation modules?
-    # TODO bigram probabilities
     # TODO many to one normalisations?
     all_candidates = pd.DataFrame()
     tweet_index = 0
@@ -115,7 +114,5 @@ def candidates_from_token(
     for feature in ["norms_seen", "in_lexicon", "same_order", "length"]:
         candidates[f"orig_{feature}"] = candidates.loc[orig][feature]
     # TODO internally calculated distance for spellcheck (not possible in this implementation of hunspell)
-    # TODO unigram probabilities
-    # TODO frequency of candidate in train - that is sum of all normalisations seen?
     # TODO percentage of normalisations seen?
     return candidates

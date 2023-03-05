@@ -68,6 +68,8 @@ def add_ngram_features(dataframe_path, ngram_counter_path, output_path=None):
     TODO: investigate the frequency of this in the data.
     TODO: may have to parallelise this.
 
+    Not doing bigram smoothing as run into size of vocabulary issue if doing laplacian smoothing - no predefined size.
+
     :param output_path: Output path for updated dataframe, if desired
     :param dataframe_path: Path of dataframe to add ngram features to
     :param ngram_counter_path: Path to pickles of ngram counters
