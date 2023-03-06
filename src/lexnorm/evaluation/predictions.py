@@ -2,6 +2,7 @@ from collections import Counter
 
 from lexnorm.data.normEval import err
 from lexnorm.data.baseline import mfr
+from lexnorm.generate_extract.filtering import is_eligible
 
 
 # ADAPTED FROM CODE IN TASK REPOSITORY (normEval.py)
@@ -9,7 +10,7 @@ def evaluate_predictions(raw, gold, pred):
     cor = 0
     changed = 0
     total = 0
-    errors = Counter()
+    errors = {}
 
     if len(gold) != len(pred):
         err(
@@ -20,12 +21,15 @@ def evaluate_predictions(raw, gold, pred):
             + ")"
         )
 
+    id = -1
     for sentRaw, sentGold, sentPred in zip(raw, gold, pred):
         if len(sentGold) != len(sentPred):
             err(
                 "Error: a sentence has a different length in your output, check the order of the sentences"
             )
         for wordRaw, wordGold, wordPred in zip(sentRaw, sentGold, sentPred):
+            if is_eligible(wordRaw):
+                id += 1
             wordRaw = wordRaw.lower()
             wordGold = wordGold.lower()
             wordPred = wordPred.lower()
@@ -34,8 +38,8 @@ def evaluate_predictions(raw, gold, pred):
             if wordGold == wordPred:
                 cor += 1
             else:
-                # TODO give tweet and token index of errors for comparison
-                errors.update([(wordRaw, wordGold, wordPred)])
+                if is_eligible(wordRaw):
+                    errors[id] = (wordRaw, wordPred, wordGold)
             total += 1
 
     accuracy = cor / total
@@ -46,9 +50,14 @@ def evaluate_predictions(raw, gold, pred):
     print("Baseline acc.(LAI): {:.2f}".format(lai * 100))
     print("Accuracy:           {:.2f}".format(accuracy * 100))
     print("ERR:                {:.2f}".format(error * 100))
-    print(errors.most_common())
+    print(
+        f"Most common wrongly un-normalised: {Counter([v for v in errors.values() if v[0] == v[1]]).most_common(10)}"
+    )
+    print(
+        f"Most common wrongly normalised: {Counter([v for v in errors.values() if v[0] != v[1]]).most_common(10)}"
+    )
 
-    return lai, accuracy, error, raw, gold, pred, errors
+    return lai, accuracy, error, precision, recall, f1, errors
 
 
 def precision_recall_f1(raw, gold, pred):

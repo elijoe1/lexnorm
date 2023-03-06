@@ -67,10 +67,10 @@ def predict_normalisations(dataframe, threshold=0.5):
 if __name__ == "__main__":
     # TODO as random state fixed, shuffling dataset can hugely change performance metric -
     #  perhaps cross validation comes in useful here?
-    train(
-        os.path.join(DATA_PATH, "hpc/train_ngrams.txt"),
-        os.path.join(DATA_PATH, "../models/rf.joblib"),
-    )
+    # train(
+    #     os.path.join(DATA_PATH, "hpc/train_ngrams.txt"),
+    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
+    # )
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
     pred_tokens = predict_normalisations(
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     )
     predictions = normalise(raw, pred_tokens)
     evaluate_predictions(raw, norm, predictions)
-    # TODO put this into evaluate_predictions as baseline
-    raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
-    dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
-    evaluate_predictions(dev_raw, dev_norm, mfr(raw, norm, dev_raw))
+    # # TODO put this into evaluate_predictions as baseline
+    # raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
+    # dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    # evaluate_predictions(dev_raw, dev_norm, mfr(raw, norm, dev_raw))
