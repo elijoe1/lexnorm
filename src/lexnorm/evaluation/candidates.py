@@ -2,12 +2,73 @@ from lexnorm.data.normEval import loadNormData
 import pandas as pd
 import os
 from lexnorm.definitions import DATA_PATH
-from lexnorm.generate_extract.process import create_index
+from lexnorm.generate_extract.process import create_index, link_to_gold
 from lexnorm.generate_extract.filtering import is_eligible
 from lexnorm.models.random_forest import predict_probs
+from lexnorm.data.analyse import analyse
 from collections import Counter
 from joblib import load
 import statistics
+import numpy as np
+
+
+def modules(gold_path, candidates, verbose=True):
+    """
+    Analyse recall of candidate generation modules (split, clipping, spellcheck, norm_dict, embeddings) on normalisations (e.g.
+    where the correct normalisation is not the original token), and give average candidates generated/token over whole data.
+    Obviously recall will be 100 for original token module and all modules when raw == norm, and 0 for original token
+    module for raw != norm - the only remaining recall is for the remaining modules when raw != norm as calculated here.
+
+    :param raw: Raw tweets
+    :param gold: Gold tweets
+    :param candidates: Candidates dataframe
+    :param verbose: If want to print analysis or just return statistics
+    :return: A dictionary giving column (i.e. module) : (recall solo, recall without, set of tok_ids uniquely correct for),
+    and combined recall of all modules on normalisations
+    """
+    columns = [
+        "from_split",
+        "from_clipping",
+        "spellcheck_rank",
+        "norms_seen",
+        "embeddings_rank",
+    ]
+    candidates = create_index(candidates)
+    candidates = link_to_gold(candidates, gold_path)
+    num_eligible, num_norms = analyse(gold_path)
+    modules = {}
+    resp = {}
+    for column in columns:
+        resp[column] = (
+            len(candidates.loc[~np.isnan(candidates[column])].index) / num_eligible
+        )
+        correct = candidates.loc[
+            # can't check for equality with np.nan as this will always return false!
+            (~np.isnan(candidates[column]))
+            & (np.isnan(candidates.from_original_token))
+            & (candidates.correct)
+        ][[column, "correct", "tok_id"]]
+        modules[column] = set(correct.tok_id.values.tolist())
+    for column in columns:
+        recall_solo = len(modules[column]) / num_norms
+        without = set().union(*[v for k, v in modules.items() if k != column])
+        recall_without = len(without) / num_norms
+        unique = modules[column] - without
+        resp[column] = (recall_solo, recall_without, unique, resp[column])
+        if verbose:
+            print(column.upper())
+            print(f"Solo recall (over normalisations): {recall_solo*100:.2f}")
+            print(f"Ablation recall (over normalisations): {recall_without*100:.2f}")
+            print(
+                f"Unique recall (over normalisations): {len(unique)/num_norms * 100:.2f}"
+            )
+            print(f"Average candidates generated per token: {resp[column][3]:.2f}")
+    combined_recall = len(set().union(*[v for v in modules.values()])) / num_norms
+    if verbose:
+        print(f"COMBINED RECALL: {combined_recall * 100:.2f}")
+        # this will likely be lower than the sum for each module as overlapping suggestions will be present
+        print(f"COMIBINED CANDIDATES/TOKEN: {len(candidates.index) / num_eligible:.2f}")
+    return resp, combined_recall
 
 
 def not_generated(raw, gold, candidates):
@@ -17,8 +78,7 @@ def not_generated(raw, gold, candidates):
     :param raw: Raw tweets
     :param gold: Gold tweets
     :param candidates: Candidates dataframe
-    :return: Dictionary of {tok_id: (raw token, gold token)} for tok_ids where raw candidate was not generated, and counter
-    of (raw token, gold token) tuples
+    :return: Dictionary of {tok_id: (raw token, gold token)} for tok_ids where raw candidate was not generated
     """
     candidates = create_index(candidates)
     not_generated = {}
@@ -38,9 +98,9 @@ def not_generated(raw, gold, candidates):
     return not_generated
 
 
-def generated_rank(raw, gold, candidates_with_preds, verbose=True, top_n=2):
+def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2):
     """
-    Analyse instances when correct candidate generated
+    Analyses model predictions when correct candidate generated
 
     :param raw: Raw tweets
     :param gold: Gold tweets
@@ -151,8 +211,9 @@ if __name__ == "__main__":
         # random_state=42,
     )
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
-    clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
-    not_generated(raw, norm, data)
-    ranks = generated_rank(
-        raw, norm, predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt"))
-    )
+    # clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
+    # not_generated(raw, norm, data)
+    # ranks = ranking(
+    #     raw, norm, predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt"))
+    # )
+    modules(os.path.join(DATA_PATH, "raw/dev.norm"), data)

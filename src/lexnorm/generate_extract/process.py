@@ -151,12 +151,12 @@ def create_index(dataframe, output_path=None):
 
 def link_to_gold(dataframe, gold_path):
     """
-    Adds "gold" column to candidates dataframe with "tok_id" column by getting list of normalisations of eligible tokens using
-    gold_path, and using tok_id as an index into the list. This is useful for analysis.
+    Adds "gold" and "correct" column to candidates dataframe with "tok_id" column by getting list of normalisations
+    of eligible tokens using gold_path, and using tok_id as an index into the list. This is useful for analysis.
 
-    :param dataframe: Dataframe to add gold column to
+    :param dataframe: Dataframe to add gold and correct column to
     :param gold_path: Path to data to link gold normalisations from
-    :return:
+    :return: Tuple of dataframe with columns added
     """
     dataframe = dataframe.copy()
     raw, norm = normEval.loadNormData(gold_path)
@@ -166,6 +166,7 @@ def link_to_gold(dataframe, gold_path):
             if is_eligible(raw_tok):
                 eligible_norms.append(norm_tok)
     dataframe["gold"] = dataframe.apply(lambda x: eligible_norms[x.tok_id], axis=1)
+    dataframe["correct"] = dataframe.index.values == dataframe.gold
     return dataframe
 
 
