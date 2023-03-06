@@ -1,6 +1,7 @@
 import pandas as pd
 
 from lexnorm.generate_extract.filtering import is_eligible
+from lexnorm.data.baseline import write
 
 
 def prep_train(annotated_dataframe):
@@ -50,7 +51,7 @@ def prep_test(unannotated_dataframe):
     return test_X
 
 
-def normalise(raw, pred_toks: dict):
+def normalise(raw, pred_toks: dict, output_path=None):
     tok_id = -1
     pred_tweets = []
     for tweet in raw:
@@ -68,4 +69,6 @@ def normalise(raw, pred_toks: dict):
             else:
                 pred_tweet.append(tok)
         pred_tweets.append(pred_tweet)
+    if output_path is not None:
+        write(raw, pred_tweets, output_path)
     return pred_tweets

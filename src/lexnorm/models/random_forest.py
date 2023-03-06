@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from lexnorm.data.baseline import mfr
 from lexnorm.data.normEval import loadNormData
 from lexnorm.definitions import DATA_PATH
+from lexnorm.definitions import LEX_PATH
 from lexnorm.evaluation.predictions import evaluate_predictions
 from lexnorm.generate_extract.process import create_index
 from lexnorm.models.normalise import prep_train, prep_test, normalise
@@ -76,9 +77,10 @@ if __name__ == "__main__":
     pred_tokens = predict_normalisations(
         predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt")), threshold=0.5
     )
-    predictions = normalise(raw, pred_tokens)
+    predictions = normalise(
+        raw, pred_tokens, os.path.join(DATA_PATH, "../models/output.txt")
+    )
     evaluate_predictions(raw, norm, predictions)
-    # # TODO put this into evaluate_predictions as baseline
-    # raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
-    # dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
-    # evaluate_predictions(dev_raw, dev_norm, mfr(raw, norm, dev_raw))
+    raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
+    dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    evaluate_predictions(dev_raw, dev_norm, mfr(raw, norm, dev_raw))
