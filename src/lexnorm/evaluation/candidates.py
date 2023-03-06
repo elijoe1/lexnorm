@@ -73,7 +73,8 @@ def modules(gold_path, candidates, verbose=True):
 
 def not_generated(raw, gold, candidates):
     """
-    Analyse instances where correct candidate not generated
+    Analyse instances where correct candidate not generated (over normalisations only as obviously will always be
+    generated if raw_tok == norm_tok
 
     :param raw: Raw tweets
     :param gold: Gold tweets
@@ -83,14 +84,17 @@ def not_generated(raw, gold, candidates):
     candidates = create_index(candidates)
     not_generated = {}
     id = -1
+    norms = 0
     for raw_sent, gold_sent in zip(raw, gold):
         for raw_tok, gold_tok in zip(raw_sent, gold_sent):
             if is_eligible(raw_tok):
                 id += 1
-                if not gold_tok in candidates.loc[candidates["tok_id"] == id].index:
-                    not_generated[id] = (raw_tok, gold_tok)
+                if raw_tok != gold_tok:
+                    norms += 1
+                    if not gold_tok in candidates.loc[candidates["tok_id"] == id].index:
+                        not_generated[id] = (raw_tok, gold_tok)
     # recall of all candidates
-    recall_all = ((id + 1) - len(not_generated)) / (id + 1)
+    recall_all = (norms - len(not_generated)) / norms
     print(f"Recall of all candidates: {recall_all*100:.2f}")
     print(
         f"Most common ungenerated normalisations: {Counter(not_generated.values()).most_common(10)}"
@@ -98,7 +102,7 @@ def not_generated(raw, gold, candidates):
     return not_generated
 
 
-def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2):
+def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=True):
     """
     Analyses model predictions when correct candidate generated
 
@@ -107,6 +111,7 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2):
     :param candidates_with_preds: Dataframe of generated candidates with predictions from model (from predict_probs)
     :param verbose: if to print analysis or just return statistics
     :param top_n: top n predictions to evaluate recall on
+    :param norms_only: if evaluating over normalisations only, or over all data
     """
     candidates = create_index(candidates_with_preds).sort_values(
         "probs", ascending=False
@@ -119,31 +124,34 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2):
     incorrect_probs_generated = []
     incorrect_probs_not_generated = []
     id = -1
+    norms = 0
     for raw_sent, gold_sent in zip(raw, gold):
         for raw_tok, gold_tok in zip(raw_sent, gold_sent):
             if is_eligible(raw_tok):
                 id += 1
                 cur_cands = candidates.loc[candidates["tok_id"] == id].reset_index()
-                if gold_tok in set(cur_cands["candidate"]):
-                    ranks[id] = cur_cands.index[
-                        cur_cands["candidate"] == gold_tok
-                    ].tolist()[0]
-                    correct_probs.append(cur_cands.iloc[ranks[id]]["probs"])
-                    if not ranks[id]:
-                        correct_top_probs.append(cur_cands.iloc[ranks[id]]["probs"])
-                    if ranks[id]:
-                        not_top[id] = (
-                            raw_tok,
-                            cur_cands.iloc[0]["candidate"],
-                            gold_tok,
-                            ranks[id],
-                            cur_cands.iloc[0]["probs"]
-                            - cur_cands.iloc[ranks[id]]["probs"],
-                        )
-                if gold_tok not in set(cur_cands["candidate"]):
-                    incorrect_probs_not_generated.append(cur_cands.iloc[0]["probs"])
-                elif ranks[id]:
-                    incorrect_probs_generated.append(cur_cands.iloc[0]["probs"])
+                if not norms_only or raw_tok != gold_tok:
+                    norms += 1
+                    if gold_tok in set(cur_cands["candidate"]):
+                        ranks[id] = cur_cands.index[
+                            cur_cands["candidate"] == gold_tok
+                        ].tolist()[0]
+                        correct_probs.append(cur_cands.iloc[ranks[id]]["probs"])
+                        if not ranks[id]:
+                            correct_top_probs.append(cur_cands.iloc[ranks[id]]["probs"])
+                        if ranks[id]:
+                            not_top[id] = (
+                                raw_tok,
+                                cur_cands.iloc[0]["candidate"],
+                                gold_tok,
+                                ranks[id],
+                                cur_cands.iloc[0]["probs"]
+                                - cur_cands.iloc[ranks[id]]["probs"],
+                            )
+                    if gold_tok not in set(cur_cands["candidate"]):
+                        incorrect_probs_not_generated.append(cur_cands.iloc[0]["probs"])
+                    elif ranks[id]:
+                        incorrect_probs_generated.append(cur_cands.iloc[0]["probs"])
     median_rank = statistics.median(sorted(ranks.values()))
     mean_rank = statistics.mean(ranks.values())
     mean_correct_prob = statistics.mean(correct_probs)
@@ -156,7 +164,9 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2):
     mean_rank_not_top = statistics.mean([v[3] for v in not_top.values()])
     mean_prob_diff_not_top = statistics.mean([v[4] for v in not_top.values()])
     percentage_generated_top = len([v for v in ranks.values() if not v]) / len(ranks)
-    top_n_recall = len([v for v in ranks.values() if v < top_n]) / (id + 1)
+    top_n_recall = len([v for v in ranks.values() if v < top_n]) / (
+        id + 1 if not norms_only else norms
+    )
     if verbose:
         print(
             f"Median rank of correct candidates: {median_rank}, "
@@ -211,9 +221,9 @@ if __name__ == "__main__":
         # random_state=42,
     )
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
-    # clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
-    # not_generated(raw, norm, data)
-    # ranks = ranking(
-    #     raw, norm, predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt"))
-    # )
+    clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
+    ranks = ranking(
+        raw, norm, predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt"))
+    )
+    not_generated(raw, norm, data)
     modules(os.path.join(DATA_PATH, "raw/dev.norm"), data)

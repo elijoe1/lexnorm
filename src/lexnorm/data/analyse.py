@@ -14,6 +14,6 @@ def analyse(data_path):
                 if not is_eligible(raw_tok) and raw_tok != "rt":
                     print(raw_tok)
                     exit(-1)
-                else:
+                elif is_eligible(raw_tok):
                     normalisations += 1
     return eligible, normalisations
