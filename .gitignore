@@ -133,4 +133,6 @@ monoise_data/
 # too large - contains test runs of candidate generation/feature extraction from HPC
 hpc/
 # too large - contains pickled ngram counters
-processed
+processed/
+# no point - just intermediate files used in makefile pipeline
+interim/

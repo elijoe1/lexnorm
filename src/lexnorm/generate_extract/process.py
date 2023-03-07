@@ -2,7 +2,6 @@ import math
 import multiprocessing
 import os
 import pickle
-from collections import Counter
 from multiprocessing import Process
 
 import pandas as pd
@@ -15,35 +14,44 @@ from lexnorm.generate_extract.candidate_generation import candidates_from_tweets
 from lexnorm.generate_extract.filtering import is_eligible
 
 
-def process_data(input_path: str, data_path: str, output_path: str, cores: int = 64):
+def process_data_file(
+    input_path: str, data_path: str, output_path: str = None, cores: int = 64
+):
+    raw_input, _ = normEval.loadNormData(input_path)
+    raw_data, norm_data = normEval.loadNormData(data_path)
+    return process_data(raw_input, raw_data, norm_data, output_path, cores)
+
+
+def process_data(
+    raw_input, raw_data, norm_data, output_path: str = None, cores: int = 64
+):
     """
     spawns [cores] processes and gives each an equal number of tweets to process. output into multiprocessing queue, then
     when all processes finish, empty queue and write to csv
     """
-    raw, norm = normEval.loadNormData(input_path)
-    # TODO: actually could construct vectors from both input and data path as unsupervised
-    w2v = word2vec.get_vectors(data_path)
-    normalisations = norm_dict.construct(data_path)
-    with open(os.path.join(DATA_PATH, "interim/lexicon.txt"), "rb") as lf:
+    w2v = word2vec.get_vectors(raw_input + raw_data)
+    normalisations = norm_dict.construct(raw_data, norm_data)
+    with open(os.path.join(DATA_PATH, "processed/lexicon.txt"), "rb") as lf:
         lex = pickle.load(lf)
+    # loading in custom lexicon extremely difficult in hunspell - discuss. Could check in module if suggestions in lex?
     spellcheck_dict = Dictionary.from_files("en_US")
     queue = multiprocessing.Queue()
     processes = []
     output = pd.DataFrame()
-    batch_size = math.ceil(len(raw) / cores)
-    gold = True if input_path == data_path else False
+    batch_size = math.ceil(len(raw_input) / cores)
+    gold = True if raw_input == raw_data else False
     for i in range(cores):
         p = Process(
             target=candidates_from_tweets,
             args=(
-                raw[i * batch_size : (i + 1) * batch_size],
+                raw_input[i * batch_size : (i + 1) * batch_size],
                 w2v,
                 normalisations,
                 lex,
                 spellcheck_dict,
                 queue,
                 i,
-                norm[i * batch_size : (i + 1) * batch_size] if gold else None,
+                norm_data[i * batch_size : (i + 1) * batch_size] if gold else None,
             ),
         )
         processes.append(p)
@@ -53,11 +61,13 @@ def process_data(input_path: str, data_path: str, output_path: str, cores: int =
         output = pd.concat([output, queue.get()])
     for p in processes:
         p.join()
-    with open(output_path, "w+") as f:
-        output.to_csv(f)
+    if output_path is not None:
+        with open(output_path, "w") as f:
+            output.to_csv(f)
+    return output
 
 
-def add_ngram_features(dataframe_path, ngram_counter_path, output_path=None):
+def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
     """
     Adds ngram features to a dataframe, namely unigram probabilities of candidate and bigram probabilities of previous
     and next word given candidate.
@@ -71,15 +81,10 @@ def add_ngram_features(dataframe_path, ngram_counter_path, output_path=None):
     Not doing bigram smoothing as run into size of vocabulary issue if doing laplacian smoothing - no predefined size.
 
     :param output_path: Output path for updated dataframe, if desired
-    :param dataframe_path: Path of dataframe to add ngram features to
+    :param dataframe: Dataframe to add ngram features to
     :param ngram_counter_path: Path to pickles of ngram counters
     """
-    dataframe = pd.read_csv(
-        dataframe_path,
-        index_col=0,
-        keep_default_na=False,
-        na_values="",
-    )
+    dataframe = dataframe.copy()
     twitter_unigram_counter = counter_from_pickle(
         os.path.join(ngram_counter_path, "twitter_unigram_counter.pickle")
     )
@@ -121,18 +126,19 @@ def add_ngram_features(dataframe_path, ngram_counter_path, output_path=None):
     )
     # dataframe["wiki_bi_next"] /= next_uni
     if output_path is not None:
-        with open(output_path, "w+") as f:
+        with open(output_path, "w") as f:
             dataframe.to_csv(f)
     return dataframe
 
 
-def create_index(dataframe, output_path=None):
+def create_index(dataframe, offset=0, output_path=None):
     """
     Replaces "process", "tweet", "tok" columns with "tok_id" column which gives an index into the list of eligible tokens
     in the dataset used to produce the dataframe of the corresponding raw token. (NOTE: not index into list of all tokens)
 
     :param dataframe: A dataframe of candidates and extracted features.
     :param output_path: A path to save the new dataframe, if desired.
+    :param offset: Offset for index, if creating index over multiple dataframes
     :return: The new dataframe.
     """
     data = dataframe.copy()
@@ -141,53 +147,57 @@ def create_index(dataframe, output_path=None):
         data.sort_values(["process", "tweet", "tok"])
         .groupby(["process", "tweet", "tok"])
         .ngroup()
-    )
+    ) + offset
     data = data.drop(["process", "tweet", "tok"], axis=1)
     if output_path is not None:
-        with open(output_path, "w+") as f:
+        with open(output_path, "w") as f:
             data.to_csv(f)
     return data
 
 
-def link_to_gold(dataframe, gold_path):
+def link_to_gold(dataframe, raw_gold, norm_gold, output_path=None):
     """
-    Adds "gold" and "correct" column to candidates dataframe with "tok_id" column by getting list of normalisations
-    of eligible tokens using gold_path, and using tok_id as an index into the list. This is useful for analysis.
+    Adds "gold" and "correct" columns to candidates dataframe with "tok_id" column by getting list of normalisations
+    of eligible tokens using raw_gold and norm_gold, and using tok_id as an index into the list. This is useful for analysis.
 
+    :param norm_gold: gold raw tweets
+    :param raw_gold: gold norm tweets
     :param dataframe: Dataframe to add gold and correct column to
-    :param gold_path: Path to data to link gold normalisations from
-    :return: Tuple of dataframe with columns added
+    :param output_path: Path to save new dataframe to, if desired
+    :return:Dataframe with columns added
     """
     dataframe = dataframe.copy()
-    raw, norm = normEval.loadNormData(gold_path)
     eligible_norms = []
-    for raw_tweet, norm_tweet in zip(raw, norm):
+    for raw_tweet, norm_tweet in zip(raw_gold, norm_gold):
         for raw_tok, norm_tok in zip(raw_tweet, norm_tweet):
             if is_eligible(raw_tok):
                 eligible_norms.append(norm_tok)
     dataframe["gold"] = dataframe.apply(lambda x: eligible_norms[x.tok_id], axis=1)
     dataframe["correct"] = dataframe.index.values == dataframe.gold
+    if output_path is not None:
+        with open(output_path, "w") as f:
+            dataframe.to_csv(f)
     return dataframe
 
 
 if __name__ == "__main__":
-    # process_data(
-    #     os.path.join(DATA_PATH, "raw/train.norm"),
-    #     os.path.join(DATA_PATH, "raw/train.norm"),
-    #     os.path.join(DATA_PATH, "hpc/train_processed_annotated_nocap_neighbours.txt"),
-    # )
-    # process_data(
-    #     os.path.join(DATA_PATH, "raw/dev.norm"),
-    #     os.path.join(DATA_PATH, "raw/train.norm"),
-    #     os.path.join(DATA_PATH, "hpc/dev_processed_nocap_neighbours.txt"),
-    # )
-    add_ngram_features(
-        os.path.join(DATA_PATH, "hpc/train_processed_annotated_nocap_neighbours.txt"),
-        os.path.join(DATA_PATH, "processed"),
-        os.path.join(DATA_PATH, "hpc/train_ngrams.txt"),
+    create_index(
+        add_ngram_features(
+            process_data_file(
+                os.path.join(DATA_PATH, "raw/train.norm"),
+                os.path.join(DATA_PATH, "raw/train.norm"),
+            ),
+            "processed",
+        ),
+        output_path="hpc/train_pipeline.txt",
     )
-    add_ngram_features(
-        os.path.join(DATA_PATH, "hpc/dev_processed_nocap_neighbours.txt"),
-        os.path.join(DATA_PATH, "processed"),
-        os.path.join(DATA_PATH, "hpc/dev_ngrams.txt"),
+    create_index(
+        add_ngram_features(
+            process_data_file(
+                os.path.join(DATA_PATH, "raw/dev.norm"),
+                os.path.join(DATA_PATH, "raw/train.norm"),
+            ),
+            "processed",
+        ),
+        output_path="hpc/dev_pipeline.txt",
     )

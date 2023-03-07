@@ -4,6 +4,25 @@ from lexnorm.generate_extract.filtering import is_eligible
 from lexnorm.data.baseline import write
 
 
+def load_candidates(candidates_path, shuffle=False):
+    """
+    Opens candidates dataframe produced from process_data correctly
+
+    :param candidates_path: Path to candidates dataframe saved in csv format
+    :param shuffle: Whether to shuffle the dataframe rows (avoids various issues)
+    :return: Candidates dataframe
+    """
+    candidates_df = pd.read_csv(
+        candidates_path, index_col=0, keep_default_na=False, na_values=""
+    )
+    if shuffle:
+        candidates_df = candidates_df.sample(
+            frac=1,
+            # random_state=42,
+        )
+    return candidates_df
+
+
 def prep_train(annotated_dataframe):
     # na_values specified as pandas would otherwise detect candidate 'NaN' as NaN rather than keeping as the string
     train_X = annotated_dataframe.drop(

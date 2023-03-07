@@ -7,6 +7,7 @@ from lexnorm.data import norm_dict
 from lexnorm.definitions import DATA_PATH
 from lexnorm.definitions import LEX_PATH
 from lexnorm.evaluation import condition_normalisation
+from lexnorm.data import normEval
 
 defined_languages = {
     "english",
@@ -169,7 +170,8 @@ if __name__ == "__main__":
     #                     ),
     #                 )
     #                 print(max_performance)
-    normalisations = norm_dict.construct(os.path.join(DATA_PATH, "interim/train.txt"))
+    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "processed/combined.txt"))
+    normalisations = norm_dict.construct(raw, norm)
     lex = build(
         {"english", "american"},
         {"contractions", "proper-names", "upper", "words"},
@@ -179,4 +181,4 @@ if __name__ == "__main__":
     lex = refine(lex.union(build_abbreviations()))
     with open(os.path.join(DATA_PATH, "processed/lexicon.txt"), "wb") as f:
         pickle.dump(lex, f)
-    # evaluate(normalisations, lex)
+    evaluate(normalisations, lex)

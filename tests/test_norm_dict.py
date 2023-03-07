@@ -1,6 +1,4 @@
-import os
-
-from lexnorm.data import baseline, norm_dict
+from lexnorm.data import norm_dict
 
 
 def test_construct(tmp_path):
@@ -12,8 +10,7 @@ def test_construct(tmp_path):
         ["brother", "get", "out", "your", "feelings", "lol"],
         ["my", "brother", "thinks", "you're", "tripping", "lol"],
     ]
-    baseline.write(raw, norm, os.path.join(tmp_path, "tmp"))
-    normalisations = norm_dict.construct(os.path.join(tmp_path, "tmp"))
+    normalisations = norm_dict.construct(raw, norm)
     assert normalisations == {
         "bruther": {"brother": 1},
         "get": {"get": 1},

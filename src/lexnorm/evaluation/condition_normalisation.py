@@ -105,7 +105,3 @@ def correlation(
     denom = denom if denom else 1
     phi = (a * d - b * c) / denom
     return phi
-
-
-if __name__ == "__main__":
-    normalisations = norm_dict.construct(os.path.join(DATA_PATH, "interim/train.txt"))

@@ -6,7 +6,7 @@ from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.filtering import is_eligible
 
 
-def construct(train) -> dict[str, Counter]:
+def construct(raw, norm):
     """
     Creates a dictionary of normalisations seen in a dataset.
 
@@ -14,10 +14,10 @@ def construct(train) -> dict[str, Counter]:
     of each. Note many-to-one normalisations are stored properly, with the raw phrase being all the involved raw tokens
     joined by spaces.
 
-    :param train:
-    :return:
+    :param raw: raw tweets
+    :param norm: norm tweets
+    :return: Dictionary of {raw -> {norm -> freq}}
     """
-    raw, norm = loadNormData(train)
     norm_dict = {}
     for tweet_raw, tweet_norm in zip(raw, norm):
         to_add = []
@@ -35,4 +35,5 @@ def construct(train) -> dict[str, Counter]:
 
 
 if __name__ == "__main__":
-    print(construct(os.path.join(DATA_PATH, "interim/train.txt")))
+    raw, norm = loadNormData(os.path.join(DATA_PATH, "processed/combined.txt"))
+    print(construct(raw, norm))
