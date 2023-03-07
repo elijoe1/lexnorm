@@ -24,8 +24,7 @@ def test_contingency_from_dict(tmp_path):
         ["brother", "get", "out", "your", "feelings", "lol"],
         ["my", "brother", "thinks", "you're", "tripping"],
     ]
-    baseline.write(raw, norm, os.path.join(tmp_path, "tmp"))
-    normalisations = norm_dict.construct(os.path.join(tmp_path, "tmp"))
+    normalisations = norm_dict.construct(raw, norm)
     a, b, c, d = condition_normalisation.contingency_from_dict(
         normalisations, lambda x: len(x[0]) <= 4
     )
