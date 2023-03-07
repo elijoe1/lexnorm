@@ -187,7 +187,7 @@ if __name__ == "__main__":
                 os.path.join(DATA_PATH, "raw/train.norm"),
                 os.path.join(DATA_PATH, "raw/train.norm"),
             ),
-            "processed",
+            os.path.join(DATA_PATH, "processed"),
         ),
         output_path="hpc/train_pipeline.txt",
     )
@@ -197,7 +197,7 @@ if __name__ == "__main__":
                 os.path.join(DATA_PATH, "raw/dev.norm"),
                 os.path.join(DATA_PATH, "raw/train.norm"),
             ),
-            "processed",
+            os.path.join(DATA_PATH, "processed"),
         ),
         output_path="hpc/dev_pipeline.txt",
     )
