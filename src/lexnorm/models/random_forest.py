@@ -10,17 +10,12 @@ from lexnorm.definitions import DATA_PATH
 from lexnorm.definitions import LEX_PATH
 from lexnorm.evaluation.predictions import evaluate_predictions
 from lexnorm.generate_extract.process import create_index
-from lexnorm.models.normalise import prep_train, prep_test, normalise
+from lexnorm.models.normalise import prep_train, prep_test, normalise, load_candidates
+
 
 # TODO: make train and predict able to take dataframe not just path for cross validation
-def train(data_path, output_file):
-    data = pd.read_csv(
-        data_path, index_col=0, keep_default_na=False, na_values=""
-    ).sample(
-        frac=1,
-        # random_state=42,
-    )
-    train_X, train_y = prep_train(data)
+def train(candidates, output_file):
+    train_X, train_y = prep_train(candidates)
     rf_clf = RandomForestClassifier(
         n_estimators=100,
         n_jobs=-1,
@@ -29,29 +24,24 @@ def train(data_path, output_file):
         class_weight="balanced",
         oob_score=True,
         # prevent over-fitting
-        max_depth=5,
+        # turns out don't need this with abstaining if low prob. Brings precision down, recall up.
+        # HIGHER THAN MFR!!
+        # max_depth=7,
     )
     rf_clf.fit(train_X, train_y)
     dump(rf_clf, output_file)
 
 
-def predict_probs(model, data_path):
-    data = pd.read_csv(
-        data_path, index_col=0, keep_default_na=False, na_values=""
-    ).sample(
-        frac=1,
-        # random_state=42,
-    )
-    features = prep_test(data)
+def predict_probs(model, candidates):
+    features = prep_test(candidates)
     probs = model.predict_proba(features)
-    data = data.copy()
-    data["probs"] = probs[:, 1]
-    return data
+    candidates = candidates.copy()
+    candidates["probs"] = probs[:, 1]
+    return candidates
 
 
 def predict_normalisations(dataframe, threshold=0.5):
     # TODO: if tie for highest probability, just chooses arbitrarily
-    dataframe = create_index(dataframe)
     pred_df = dataframe.sort_values("probs", ascending=False).drop_duplicates(
         ["tok_id"]
     )
@@ -68,19 +58,25 @@ def predict_normalisations(dataframe, threshold=0.5):
 if __name__ == "__main__":
     # TODO as random state fixed, shuffling dataset can hugely change performance metric -
     #  perhaps cross validation comes in useful here?
-    # train(
-    #     os.path.join(DATA_PATH, "hpc/train_ngrams.txt"),
-    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
-    # )
-    raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    train_df = load_candidates(
+        os.path.join(DATA_PATH, "hpc/train_pipeline.txt"), shuffle=True
+    )
+    dev_df = load_candidates(
+        os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"), shuffle=True
+    )
+    train(
+        train_df,
+        os.path.join(DATA_PATH, "../models/rf.joblib"),
+    )
+    dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
     pred_tokens = predict_normalisations(
-        predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt")), threshold=0.5
+        predict_probs(clf, dev_df),
+        threshold=0.5,
     )
     predictions = normalise(
-        raw, pred_tokens, os.path.join(DATA_PATH, "../models/output.txt")
+        dev_raw, pred_tokens, os.path.join(DATA_PATH, "../models/output.txt")
     )
-    evaluate_predictions(raw, norm, predictions)
-    raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
-    dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
-    evaluate_predictions(dev_raw, dev_norm, mfr(raw, norm, dev_raw))
+    evaluate_predictions(dev_raw, dev_norm, predictions)
+    train_raw, train_norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
+    evaluate_predictions(dev_raw, dev_norm, mfr(train_raw, train_norm, dev_raw))

@@ -4,6 +4,7 @@ import os
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.process import create_index, link_to_gold
 from lexnorm.generate_extract.filtering import is_eligible
+from lexnorm.models.normalise import load_candidates
 from lexnorm.models.random_forest import predict_probs
 from lexnorm.data.analyse import analyse
 from collections import Counter
@@ -33,8 +34,8 @@ def modules(gold_path, candidates, verbose=True):
         "norms_seen",
         "embeddings_rank",
     ]
-    candidates = create_index(candidates)
-    candidates = link_to_gold(candidates, gold_path)
+    raw, norm = loadNormData(gold_path)
+    candidates = link_to_gold(candidates, raw, norm)
     num_eligible, num_norms = analyse(gold_path)
     modules = {}
     resp = {}
@@ -81,7 +82,6 @@ def not_generated(raw, gold, candidates):
     :param candidates: Candidates dataframe
     :return: Dictionary of {tok_id: (raw token, gold token)} for tok_ids where raw candidate was not generated
     """
-    candidates = create_index(candidates)
     not_generated = {}
     id = -1
     norms = 0
@@ -113,9 +113,7 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=
     :param top_n: top n predictions to evaluate recall on
     :param norms_only: if evaluating over normalisations only, or over all data
     """
-    candidates = create_index(candidates_with_preds).sort_values(
-        "probs", ascending=False
-    )
+    candidates = candidates_with_preds.sort_values("probs", ascending=False)
     candidates["candidate"] = candidates.index.values
     not_top = {}
     ranks = {}
@@ -211,19 +209,13 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=
 
 
 if __name__ == "__main__":
-    data = pd.read_csv(
-        os.path.join(DATA_PATH, "hpc/dev_ngrams.txt"),
-        index_col=0,
-        keep_default_na=False,
-        na_values="",
-    ).sample(
-        frac=1,
-        # random_state=42,
+    data = load_candidates(
+        os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"), shuffle=True
     )
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
     ranks = ranking(
-        raw, norm, predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_ngrams.txt"))
+        raw, norm, predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"))
     )
     not_generated(raw, norm, data)
     modules(os.path.join(DATA_PATH, "raw/dev.norm"), data)
