@@ -189,7 +189,7 @@ if __name__ == "__main__":
             ),
             os.path.join(DATA_PATH, "processed"),
         ),
-        output_path="hpc/train_pipeline.txt",
+        output_path=os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
     )
     create_index(
         add_ngram_features(
@@ -199,5 +199,5 @@ if __name__ == "__main__":
             ),
             os.path.join(DATA_PATH, "processed"),
         ),
-        output_path="hpc/dev_pipeline.txt",
+        output_path=os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
     )
