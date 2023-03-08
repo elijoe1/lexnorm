@@ -21,12 +21,12 @@ def train(candidates, output_file):
         n_jobs=-1,
         random_state=42,
         verbose=1,
-        class_weight="balanced",
+        # class_weight="balanced",
         oob_score=True,
         # prevent over-fitting
         # turns out don't need this with abstaining if low prob. Brings precision down, recall up.
         # HIGHER THAN MFR!!
-        # max_depth=7,
+        # max_depth=3,
     )
     rf_clf.fit(train_X, train_y)
     dump(rf_clf, output_file)
@@ -41,6 +41,9 @@ def predict_probs(model, candidates):
 
 
 def predict_normalisations(dataframe, threshold=0.5):
+    # 0.5 is not an arbitrary threshold - if above .predict function of classifier would predict class 1
+    # as takes class with highest proba and there are only two classes. NOTE that .predict_proba should not be interpreted
+    # as confidence level of class for random forest - just number input to decision function.
     # TODO: if tie for highest probability, just chooses arbitrarily
     pred_df = dataframe.sort_values("probs", ascending=False).drop_duplicates(
         ["tok_id"]
@@ -56,7 +59,7 @@ def predict_normalisations(dataframe, threshold=0.5):
 
 
 if __name__ == "__main__":
-    # TODO as random state fixed, shuffling dataset can hugely change performance metric -
+    # TODO as random state fixed, shuffling dataset can change performance metric -
     #  perhaps cross validation comes in useful here?
     train_df = load_candidates(
         os.path.join(DATA_PATH, "hpc/train_pipeline.txt"), shuffle=True
@@ -64,10 +67,10 @@ if __name__ == "__main__":
     dev_df = load_candidates(
         os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"), shuffle=True
     )
-    train(
-        train_df,
-        os.path.join(DATA_PATH, "../models/rf.joblib"),
-    )
+    # train(
+    #     train_df,
+    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
+    # )
     dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
     pred_tokens = predict_normalisations(

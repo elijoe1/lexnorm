@@ -102,9 +102,15 @@ def not_generated(raw, gold, candidates):
     return not_generated
 
 
-def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=True):
+def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=1, norms_only=True):
     """
     Analyses model predictions when correct candidate generated
+
+    ISSUE: for tied probabilities, ordering of candidates arbitrary (depends on shuffle). If we do not have joint ranks,
+    this would lead to very variable rank-related metrics.
+    The biggest issue is that a lot of probabilities are 0, so if the correct candidate is in that set, can be huge range
+    of positions it can be in. Generally few candidates are ranked first, so the rank metrics for top rankings specifically
+    do not change very much with shuffling or with joint ranks (what we care about the most).
 
     :param raw: Raw tweets
     :param gold: Gold tweets
@@ -121,6 +127,7 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=
     correct_top_probs = []
     incorrect_probs_generated = []
     incorrect_probs_not_generated = []
+    top_n_count = []
     id = -1
     norms = 0
     for raw_sent, gold_sent in zip(raw, gold):
@@ -128,28 +135,38 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=
             if is_eligible(raw_tok):
                 id += 1
                 cur_cands = candidates.loc[candidates["tok_id"] == id].reset_index()
+                probs = cur_cands["probs"].tolist()
+                top_n_count.append(
+                    sum(
+                        i[1]
+                        for i in sorted(
+                            Counter(probs).items(), key=lambda x: x[0], reverse=True
+                        )[:top_n]
+                    )
+                )
+                probs = sorted(list(set(probs)), reverse=True)
                 if not norms_only or raw_tok != gold_tok:
                     norms += 1
                     if gold_tok in set(cur_cands["candidate"]):
-                        ranks[id] = cur_cands.index[
-                            cur_cands["candidate"] == gold_tok
-                        ].tolist()[0]
-                        correct_probs.append(cur_cands.iloc[ranks[id]]["probs"])
+                        ranks[id] = probs.index(
+                            cur_cands.loc[cur_cands["candidate"] == gold_tok][
+                                "probs"
+                            ].tolist()[0]
+                        )
+                        correct_probs.append(probs[ranks[id]])
                         if not ranks[id]:
-                            correct_top_probs.append(cur_cands.iloc[ranks[id]]["probs"])
+                            correct_top_probs.append(probs[ranks[id]])
                         if ranks[id]:
                             not_top[id] = (
                                 raw_tok,
-                                cur_cands.iloc[0]["candidate"],
                                 gold_tok,
                                 ranks[id],
-                                cur_cands.iloc[0]["probs"]
-                                - cur_cands.iloc[ranks[id]]["probs"],
+                                probs[0] - probs[ranks[id]],
                             )
                     if gold_tok not in set(cur_cands["candidate"]):
-                        incorrect_probs_not_generated.append(cur_cands.iloc[0]["probs"])
+                        incorrect_probs_not_generated.append(probs[0])
                     elif ranks[id]:
-                        incorrect_probs_generated.append(cur_cands.iloc[0]["probs"])
+                        incorrect_probs_generated.append(probs[0])
     median_rank = statistics.median(sorted(ranks.values()))
     mean_rank = statistics.mean(ranks.values())
     mean_correct_prob = statistics.mean(correct_probs)
@@ -158,9 +175,9 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=
         incorrect_probs_not_generated
     )
     mean_correct_top_prob = statistics.mean(correct_top_probs)
-    median_rank_not_top = statistics.median(sorted([v[3] for v in not_top.values()]))
-    mean_rank_not_top = statistics.mean([v[3] for v in not_top.values()])
-    mean_prob_diff_not_top = statistics.mean([v[4] for v in not_top.values()])
+    median_rank_not_top = statistics.median(sorted([v[2] for v in not_top.values()]))
+    mean_rank_not_top = statistics.mean([v[2] for v in not_top.values()])
+    mean_prob_diff_not_top = statistics.mean([v[3] for v in not_top.values()])
     percentage_generated_top = len([v for v in ranks.values() if not v]) / len(ranks)
     top_n_recall = len([v for v in ranks.values() if v < top_n]) / (
         id + 1 if not norms_only else norms
@@ -169,6 +186,10 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=
         print(
             f"Median rank of correct candidates: {median_rank}, "
             f"mean: {mean_rank:.2f}"
+        )
+        print(
+            f"Median rank of correct candidates not ranked first: {median_rank_not_top}, "
+            f"mean: {mean_rank_not_top:.2f}"
         )
         print(f"Mean probability of correct candidates: {mean_correct_prob:.3f}")
         print(
@@ -181,21 +202,20 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=
             f"Mean probability of incorrect candidates ranked first when correct candidate not generated: {mean_incorrect_top_not_generated_prob:.3f}"
         )
         print(
-            f"Median rank of correct candidates not ranked first: {median_rank_not_top}, "
-            f"mean: {mean_rank_not_top:.2f}"
-        )
-        print(
             f"Mean probability difference of correct candidates not ranked first to first ranked candidate: {mean_prob_diff_not_top:.3f}"
         )
         print(
             f"Percentage of correct candidates ranked first: {percentage_generated_top * 100:.2f}"
         )
-        print(f"Recall of top {top_n} candidate(s): {top_n_recall * 100:.2f}")
+        print(f"Recall of top {top_n} ranked candidate(s): {top_n_recall * 100:.2f}")
         print(
-            f"Most common ranking errors: {Counter([v[:3] for v in not_top.values()]).most_common(10)}"
+            f"Mean number of candidates ranked top {top_n}: {statistics.mean(top_n_count):.2f}, median: {statistics.median(sorted(top_n_count))}"
         )
         print(
-            f"Closest ranking errors: {sorted(not_top.values(), key = lambda x: x[4])[:10]}"
+            f"Most common ranking errors: {Counter([v[:2] for v in not_top.values()]).most_common(10)}"
+        )
+        print(
+            f"Closest ranking errors: {sorted(not_top.values(), key = lambda x: x[3])[:10]}"
         )
     return (
         ranks,
@@ -205,6 +225,7 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=2, norms_only=
         incorrect_probs_generated,
         incorrect_probs_not_generated,
         top_n_recall,
+        top_n_count,
     )
 
 
@@ -214,8 +235,6 @@ if __name__ == "__main__":
     )
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
-    ranks = ranking(
-        raw, norm, predict_probs(clf, os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"))
-    )
+    ranks = ranking(raw, norm, predict_probs(clf, data))
     not_generated(raw, norm, data)
     modules(os.path.join(DATA_PATH, "raw/dev.norm"), data)
