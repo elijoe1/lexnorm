@@ -1,8 +1,10 @@
 import os
 
+import numpy as np
 import pandas as pd
 from joblib import dump, load
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import KFold
 
 from lexnorm.data.baseline import mfr
 from lexnorm.data.normEval import loadNormData
@@ -14,12 +16,12 @@ from lexnorm.models.normalise import prep_train, prep_test, normalise, load_cand
 
 
 # TODO: make train and predict able to take dataframe not just path for cross validation
-def train(candidates, output_file):
+def train(candidates, random_state, output_file):
     train_X, train_y = prep_train(candidates)
     rf_clf = RandomForestClassifier(
         n_estimators=100,
         n_jobs=-1,
-        random_state=42,
+        random_state=random_state,
         verbose=1,
         # class_weight="balanced",
         oob_score=True,
@@ -60,28 +62,66 @@ def predict_normalisations(dataframe, threshold=0.5):
     }
 
 
+def train_predict_evaluate_cv(data_path):
+    raw, norm = loadNormData(data_path)
+    raw = np.array(raw, dtype=object)
+    norm = np.array(norm, dtype=object)
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    # to make robust to randomness of classifier while giving consistent results
+    rng = np.random.RandomState(42)
+    for i, folds in enumerate(kf.split(raw, norm)):
+        train_idx, test_idx = folds
+        test_raw = raw[test_idx]
+        test_norm = norm[test_idx]
+        train_df = create_index(
+            load_candidates(
+                os.path.join(DATA_PATH, f"hpc/cv/train_{i}.txt"), shuffle=True
+            )
+        )
+        dev_df = create_index(
+            load_candidates(
+                os.path.join(DATA_PATH, f"hpc/cv/test_{i}.txt"), shuffle=True
+            )
+        )
+        train(
+            train_df,
+            rng,
+            os.path.join(DATA_PATH, f"../models/rf_{i}.joblib"),
+        )
+        clf = load(os.path.join(DATA_PATH, f"../models/rf_{i}.joblib"))
+        pred_tokens = predict_normalisations(
+            predict_probs(clf, dev_df),
+            threshold=0.5,
+        )
+        predictions = normalise(
+            test_raw, pred_tokens, os.path.join(DATA_PATH, f"../models/output_{i}.txt")
+        )
+        evaluate_predictions(test_raw, test_norm, predictions)
+
+
 if __name__ == "__main__":
-    # TODO as random state fixed, shuffling dataset can change performance metric -
-    #  perhaps cross validation comes in useful here?
-    train_df = load_candidates(
-        os.path.join(DATA_PATH, "hpc/train_pipeline.txt"), shuffle=True
-    )
-    dev_df = load_candidates(
-        os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"), shuffle=True
-    )
-    train(
-        train_df,
-        os.path.join(DATA_PATH, "../models/rf.joblib"),
-    )
-    dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
-    clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
-    pred_tokens = predict_normalisations(
-        predict_probs(clf, dev_df),
-        threshold=0.5,
-    )
-    predictions = normalise(
-        dev_raw, pred_tokens, os.path.join(DATA_PATH, "../models/output.txt")
-    )
-    evaluate_predictions(dev_raw, dev_norm, predictions)
-    train_raw, train_norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
-    evaluate_predictions(dev_raw, dev_norm, mfr(train_raw, train_norm, dev_raw))
+    # # TODO as random state fixed, shuffling dataset can change performance metric -
+    # #  perhaps cross validation comes in useful here?
+    # train_df = load_candidates(
+    #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"), shuffle=True
+    # )
+    # dev_df = load_candidates(
+    #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"), shuffle=True
+    # )
+    # train(
+    #     train_df,
+    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
+    # )
+    # dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
+    # clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
+    # pred_tokens = predict_normalisations(
+    #     predict_probs(clf, dev_df),
+    #     threshold=0.5,
+    # )
+    # predictions = normalise(
+    #     dev_raw, pred_tokens, os.path.join(DATA_PATH, "../models/output.txt")
+    # )
+    # evaluate_predictions(dev_raw, dev_norm, predictions)
+    # train_raw, train_norm = loadNormData(os.path.join(DATA_PATH, "raw/train.norm"))
+    # evaluate_predictions(dev_raw, dev_norm, mfr(train_raw, train_norm, dev_raw))
+    train_predict_evaluate_cv(os.path.join(DATA_PATH, "processed/combined.txt"))

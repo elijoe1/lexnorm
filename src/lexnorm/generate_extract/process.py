@@ -201,7 +201,7 @@ def process_cv(data_path, output_dir):
         add_ngram_features(
             process_data(raw_test, raw_train, norm_train),
             os.path.join(DATA_PATH, "processed"),
-            os.path.join(DATA_PATH, f"test_{i}.txt"),
+            os.path.join(output_dir, f"test_{i}.txt"),
         )
         print(f"Completed {i+1}/5")
 
