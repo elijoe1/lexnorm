@@ -23,6 +23,8 @@ def train(candidates, output_file):
         verbose=1,
         # class_weight="balanced",
         oob_score=True,
+        # suggested by scikit docs as good to prevent over-fitting (seems to work a little...?)
+        min_samples_leaf=5
         # prevent over-fitting
         # turns out don't need this with abstaining if low prob. Brings precision down, recall up.
         # HIGHER THAN MFR!!
@@ -67,10 +69,10 @@ if __name__ == "__main__":
     dev_df = load_candidates(
         os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"), shuffle=True
     )
-    # train(
-    #     train_df,
-    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
-    # )
+    train(
+        train_df,
+        os.path.join(DATA_PATH, "../models/rf.joblib"),
+    )
     dev_raw, dev_norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
     pred_tokens = predict_normalisations(

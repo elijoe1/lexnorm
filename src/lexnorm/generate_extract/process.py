@@ -4,10 +4,13 @@ import os
 import pickle
 from multiprocessing import Process
 
+import numpy as np
 import pandas as pd
+from sklearn.model_selection import KFold
 from spylls.hunspell import Dictionary
 
 from lexnorm.data import normEval, word2vec, norm_dict
+from lexnorm.data.normEval import loadNormData
 from lexnorm.data.word_ngrams import counter_from_pickle
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.candidate_generation import candidates_from_tweets
@@ -180,24 +183,51 @@ def link_to_gold(dataframe, raw_gold, norm_gold, output_path=None):
     return dataframe
 
 
+def process_cv(data_path, output_dir):
+    raw, norm = loadNormData(data_path)
+    raw = np.array(raw, dtype=object)
+    norm = np.array(norm, dtype=object)
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    for i, folds in enumerate(kf.split(raw, norm)):
+        train, test = folds
+        raw_train = raw[train].tolist()
+        norm_train = norm[train].tolist()
+        raw_test = raw[test].tolist()
+        add_ngram_features(
+            process_data(raw_train, raw_train, norm_train),
+            os.path.join(DATA_PATH, "processed"),
+            os.path.join(output_dir, f"train_{i}.txt"),
+        )
+        add_ngram_features(
+            process_data(raw_test, raw_train, norm_train),
+            os.path.join(DATA_PATH, "processed"),
+            os.path.join(DATA_PATH, f"test_{i}.txt"),
+        )
+        print(f"Completed {i+1}/5")
+
+
 if __name__ == "__main__":
-    create_index(
-        add_ngram_features(
-            process_data_file(
-                os.path.join(DATA_PATH, "raw/train.norm"),
-                os.path.join(DATA_PATH, "raw/train.norm"),
-            ),
-            os.path.join(DATA_PATH, "processed"),
-        ),
-        output_path=os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
-    )
-    create_index(
-        add_ngram_features(
-            process_data_file(
-                os.path.join(DATA_PATH, "raw/dev.norm"),
-                os.path.join(DATA_PATH, "raw/train.norm"),
-            ),
-            os.path.join(DATA_PATH, "processed"),
-        ),
-        output_path=os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
+    #     create_index(
+    #         add_ngram_features(
+    #             process_data_file(
+    #                 os.path.join(DATA_PATH, "raw/train.norm"),
+    #                 os.path.join(DATA_PATH, "raw/train.norm"),
+    #             ),
+    #             os.path.join(DATA_PATH, "processed"),
+    #         ),
+    #         output_path=os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
+    #     )
+    #     create_index(
+    #         add_ngram_features(
+    #             process_data_file(
+    #                 os.path.join(DATA_PATH, "raw/dev.norm"),
+    #                 os.path.join(DATA_PATH, "raw/train.norm"),
+    #             ),
+    #             os.path.join(DATA_PATH, "processed"),
+    #         ),
+    #         output_path=os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
+    #     )
+    process_cv(
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "hpc/cv"),
     )
