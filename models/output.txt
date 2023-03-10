@@ -32,7 +32,7 @@ why	why
 dese	dese
 niggas	niggers
 think	think
-dey	they
+dey	dey
 doin	doing
 summn	summn
 
@@ -1395,7 +1395,7 @@ centre	centre
 @byxns	@byxns
 @exokkkai	@exokkkai
 @kyugngsoo	@kyugngsoo
-nah	nah
+nah	no
 you	you
 too	too
 !	!
@@ -3005,7 +3005,7 @@ liverpool	liverpool
 so	so
 i	i
 can	can
-b	b
+b	be
 away	away
 like	like
 ?	?
@@ -5220,7 +5220,7 @@ girl	girl
 @yusufrasheedat1	@yusufrasheedat1
 hapi	hapi
 birthday	birthday
-2	2
+2	to
 my	my
 lovely	lovely
 angel	angel
@@ -5234,7 +5234,7 @@ life	life
 nd	and
 prosperity	prosperity
 ........	........
-nd	and
+nd	nd
 wish	wish
 u	you
 all	all
@@ -8232,7 +8232,7 @@ man	man
 henny	henny
 will	will
 change	change
-yo	you
+yo	your
 whole	whole
 fuccin	fuccin
 life	life

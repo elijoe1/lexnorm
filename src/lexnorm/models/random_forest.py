@@ -9,14 +9,12 @@ from sklearn.model_selection import KFold
 from lexnorm.data.baseline import mfr
 from lexnorm.data.normEval import loadNormData
 from lexnorm.definitions import DATA_PATH
-from lexnorm.definitions import LEX_PATH
 from lexnorm.evaluation.predictions import evaluate_predictions
 from lexnorm.generate_extract.process import create_index
 from lexnorm.models.normalise import prep_train, prep_test, normalise, load_candidates
 
 
-# TODO: make train and predict able to take dataframe not just path for cross validation
-def train(candidates, random_state, output_file):
+def train(candidates, random_state=None, output_path=None):
     train_X, train_y = prep_train(candidates)
     rf_clf = RandomForestClassifier(
         n_estimators=100,
@@ -33,7 +31,9 @@ def train(candidates, random_state, output_file):
         # max_depth=3,
     )
     rf_clf.fit(train_X, train_y)
-    dump(rf_clf, output_file)
+    if output_path is not None:
+        dump(rf_clf, output_path)
+    return rf_clf
 
 
 def predict_probs(model, candidates):
@@ -63,7 +63,12 @@ def predict_normalisations(dataframe, threshold=0.5):
 
 
 def train_predict_evaluate_cv(
-    model_dir, tweets_path, df_dir, output_dir=None, train_first=False
+    model_dir,
+    tweets_path,
+    df_dir,
+    output_dir=None,
+    train_first=False,
+    drop_features=None,
 ):
     raw, norm = loadNormData(tweets_path)
     raw = np.array(raw, dtype=object)
@@ -91,21 +96,24 @@ def train_predict_evaluate_cv(
                 random_state=load_rng,
                 shuffle=True,
             )
-        )
+        ).drop(columns=drop_features if drop_features is not None else [])
         dev_df = create_index(
             load_candidates(
                 os.path.join(DATA_PATH, df_dir, f"test_{i}.txt"),
                 random_state=load_rng,
                 shuffle=True,
             )
-        )
+        ).drop(columns=drop_features if drop_features is not None else [])
         if train_first:
-            train(
+            clf = train(
                 train_df,
                 model_rng,
-                os.path.join(DATA_PATH, model_dir, f"rf_{i}.joblib"),
+                os.path.join(DATA_PATH, model_dir, f"rf_{i}.joblib")
+                if model_dir is not None
+                else None,
             )
-        clf = load(os.path.join(DATA_PATH, model_dir, f"rf_{i}.joblib"))
+        else:
+            clf = load(os.path.join(DATA_PATH, model_dir, f"rf_{i}.joblib"))
         pred_tokens = predict_normalisations(
             predict_probs(clf, dev_df),
             threshold=0.5,
@@ -117,8 +125,8 @@ def train_predict_evaluate_cv(
             if output_dir is not None
             else None,
         )
-    evaluate_predictions(comb_raw, comb_norm, comb_preds)
     evaluate_predictions(comb_raw, comb_norm, mfr_preds)
+    return evaluate_predictions(comb_raw, comb_norm, comb_preds)[2]  # ERR
 
 
 def train_predict_evaluate(
@@ -129,24 +137,67 @@ def train_predict_evaluate(
     test_df_path,
     output_path=None,
     train_first=False,
+    drop_features=None,
 ):
     # NOTE assumes create_index already saved to file, as is fine with non-cv operation
     model_rng = np.random.RandomState(42)
     load_rng = np.random.RandomState(42)
-    train_df = load_candidates(train_df_path, random_state=load_rng, shuffle=True)
-    test_df = load_candidates(test_df_path, random_state=load_rng, shuffle=True)
+    train_df = load_candidates(train_df_path, random_state=load_rng, shuffle=True).drop(
+        columns=drop_features if drop_features is not None else []
+    )
+    test_df = load_candidates(test_df_path, random_state=load_rng, shuffle=True).drop(
+        columns=drop_features if drop_features is not None else []
+    )
     raw, norm = loadNormData(test_tweets_path)
     if train_first:
-        train(train_df, model_rng, model_path)
-    clf = load(model_path)
+        clf = train(train_df, model_rng, model_path)
+    else:
+        clf = load(model_path)
     pred_tokens = predict_normalisations(
         predict_probs(clf, test_df),
         threshold=0.5,
     )
-    predictions = normalise(raw, pred_tokens, output_path)
-    evaluate_predictions(raw, norm, predictions)
     train_raw, train_norm = loadNormData(train_tweets_path)
     evaluate_predictions(raw, norm, mfr(train_raw, train_norm, raw))
+    predictions = normalise(raw, pred_tokens, output_path)
+    return evaluate_predictions(raw, norm, predictions)[2]  # ERR
+
+
+def feature_ablation(output_path):
+    features = [
+        "cosine_to_orig",
+        "embeddings_rank",
+        "from_clipping",
+        "from_original_token",
+        "from_split",
+        "norms_seen",
+        "spellcheck_rank",
+        "in_lexicon",
+        "length",
+        "same_order",
+        "orig_norms_seen",
+        "orig_in_lexicon",
+        "orig_same_order",
+        "orig_length",
+        "twitter_uni",
+        "twitter_bi_prev",
+        "twitter_bi_next",
+        "wiki_uni",
+        "wiki_bi_prev",
+        "wiki_bi_next",
+    ]
+    scores = {}
+    for feature in features:
+        scores[feature] = train_predict_evaluate_cv(
+            None,
+            os.path.join(DATA_PATH, "processed/combined.txt"),
+            os.path.join(DATA_PATH, "hpc/cv"),
+            None,
+            train_first=True,
+            drop_features=feature,
+        )
+    with open(output_path, "w") as f:
+        f.write(str(scores))
 
 
 if __name__ == "__main__":
@@ -157,10 +208,13 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
     #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
     #     os.path.join(DATA_PATH, "../models/output.txt"),
+    #     train_first=True,
     # )
-    train_predict_evaluate_cv(
-        os.path.join(DATA_PATH, "../models"),
-        os.path.join(DATA_PATH, "processed/combined.txt"),
-        os.path.join(DATA_PATH, "hpc/cv"),
-        os.path.join(DATA_PATH, "../models/output"),
-    )
+    # train_predict_evaluate_cv(
+    #     os.path.join(DATA_PATH, "../models"),
+    #     os.path.join(DATA_PATH, "processed/combined.txt"),
+    #     os.path.join(DATA_PATH, "hpc/cv"),
+    #     os.path.join(DATA_PATH, "../models/output"),
+    # )
+    # feature_ablation()
+    feature_ablation(os.path.join(DATA_PATH, "hpc/feature_ablation.txt"))
