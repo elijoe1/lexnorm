@@ -206,27 +206,36 @@ def process_cv(data_path, output_dir):
         print(f"Completed {i+1}/5")
 
 
+def process(train_path, test_path, train_output_path, test_output_path):
+    create_index(
+        add_ngram_features(
+            process_data_file(
+                train_path,
+                train_path,
+            ),
+            os.path.join(DATA_PATH, "processed"),
+        ),
+        output_path=train_output_path,
+    )
+    create_index(
+        add_ngram_features(
+            process_data_file(
+                test_path,
+                train_path,
+            ),
+            os.path.join(DATA_PATH, "processed"),
+        ),
+        output_path=test_output_path,
+    )
+
+
 if __name__ == "__main__":
-    #     create_index(
-    #         add_ngram_features(
-    #             process_data_file(
-    #                 os.path.join(DATA_PATH, "raw/train.norm"),
-    #                 os.path.join(DATA_PATH, "raw/train.norm"),
-    #             ),
-    #             os.path.join(DATA_PATH, "processed"),
-    #         ),
-    #         output_path=os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
-    #     )
-    #     create_index(
-    #         add_ngram_features(
-    #             process_data_file(
-    #                 os.path.join(DATA_PATH, "raw/dev.norm"),
-    #                 os.path.join(DATA_PATH, "raw/train.norm"),
-    #             ),
-    #             os.path.join(DATA_PATH, "processed"),
-    #         ),
-    #         output_path=os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
-    #     )
+    # process(
+    #     os.path.join(DATA_PATH, "raw/train.norm"),
+    #     os.path.join(DATA_PATH, "raw/dev.norm"),
+    #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
+    #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
+    # )
     process_cv(
         os.path.join(DATA_PATH, "processed/combined.txt"),
         os.path.join(DATA_PATH, "hpc/cv"),

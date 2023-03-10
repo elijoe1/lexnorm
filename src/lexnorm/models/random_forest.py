@@ -130,6 +130,7 @@ def train_predict_evaluate(
     output_path=None,
     train_first=False,
 ):
+    # NOTE assumes create_index already saved to file, as is fine with non-cv operation
     model_rng = np.random.RandomState(42)
     load_rng = np.random.RandomState(42)
     train_df = load_candidates(train_df_path, random_state=load_rng, shuffle=True)
@@ -149,17 +150,17 @@ def train_predict_evaluate(
 
 
 if __name__ == "__main__":
-    train_predict_evaluate(
-        os.path.join(DATA_PATH, "../models/rf.joblib"),
-        os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "raw/dev.norm"),
-        os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
-        os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
-        os.path.join(DATA_PATH, "../models/output.txt"),
-    )
-    # train_predict_evaluate_cv(
-    #     os.path.join(DATA_PATH, "../models"),
-    #     os.path.join(DATA_PATH, "processed/combined.txt"),
-    #     os.path.join(DATA_PATH, "hpc/cv"),
-    #     os.path.join(DATA_PATH, "../models/output"),
+    # train_predict_evaluate(
+    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
+    #     os.path.join(DATA_PATH, "raw/train.norm"),
+    #     os.path.join(DATA_PATH, "raw/dev.norm"),
+    #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
+    #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
+    #     os.path.join(DATA_PATH, "../models/output.txt"),
     # )
+    train_predict_evaluate_cv(
+        os.path.join(DATA_PATH, "../models"),
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "hpc/cv"),
+        os.path.join(DATA_PATH, "../models/output"),
+    )
