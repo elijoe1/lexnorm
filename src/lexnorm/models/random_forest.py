@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 from joblib import dump, load
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.model_selection import KFold
 
 from lexnorm.data.baseline import mfr
@@ -30,6 +30,15 @@ def train(candidates, random_state=None, output_path=None):
         # HIGHER THAN MFR!!
         # max_depth=3,
     )
+    rf_clf.fit(train_X, train_y)
+    if output_path is not None:
+        dump(rf_clf, output_path)
+    return rf_clf
+
+
+def train_adaboost(candidates, random_state=None, output_path=None):
+    train_X, train_y = prep_train(candidates)
+    rf_clf = AdaBoostClassifier(n_estimators=200, random_state=random_state)
     rf_clf.fit(train_X, train_y)
     if output_path is not None:
         dump(rf_clf, output_path)
@@ -69,6 +78,7 @@ def train_predict_evaluate_cv(
     output_dir=None,
     train_first=False,
     drop_features=None,
+    with_mfr=False,
 ):
     raw, norm = loadNormData(tweets_path)
     raw = np.array(raw, dtype=object)
@@ -124,6 +134,7 @@ def train_predict_evaluate_cv(
             os.path.join(DATA_PATH, output_dir, f"output_{i}.txt")
             if output_dir is not None
             else None,
+            baseline_preds=mfr(train_raw, train_norm, test_raw) if with_mfr else None,
         )
     evaluate_predictions(comb_raw, comb_norm, mfr_preds)
     return evaluate_predictions(comb_raw, comb_norm, comb_preds)[2]  # ERR
@@ -138,6 +149,7 @@ def train_predict_evaluate(
     output_path=None,
     train_first=False,
     drop_features=None,
+    with_mfr=False,
 ):
     # NOTE assumes create_index already saved to file, as is fine with non-cv operation
     model_rng = np.random.RandomState(42)
@@ -159,7 +171,12 @@ def train_predict_evaluate(
     )
     train_raw, train_norm = loadNormData(train_tweets_path)
     evaluate_predictions(raw, norm, mfr(train_raw, train_norm, raw))
-    predictions = normalise(raw, pred_tokens, output_path)
+    predictions = normalise(
+        raw,
+        pred_tokens,
+        output_path,
+        baseline_preds=mfr(train_raw, train_norm, raw) if with_mfr else None,
+    )
     return evaluate_predictions(raw, norm, predictions)[2]  # ERR
 
 
@@ -188,6 +205,7 @@ def feature_ablation(output_path):
     ]
     scores = {}
     for feature in features:
+        # TODO make this non cv version and do on combined and test
         scores[feature] = train_predict_evaluate_cv(
             None,
             os.path.join(DATA_PATH, "processed/combined.txt"),
@@ -208,13 +226,16 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
     #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
     #     os.path.join(DATA_PATH, "../models/output.txt"),
-    #     train_first=True,
+    #     # train_first=True,
+    #     # drop_features="orig_same_order",
+    #     with_mfr=True,
     # )
-    # train_predict_evaluate_cv(
-    #     os.path.join(DATA_PATH, "../models"),
-    #     os.path.join(DATA_PATH, "processed/combined.txt"),
-    #     os.path.join(DATA_PATH, "hpc/cv"),
-    #     os.path.join(DATA_PATH, "../models/output"),
-    # )
-    # feature_ablation()
-    feature_ablation(os.path.join(DATA_PATH, "hpc/feature_ablation.txt"))
+    train_predict_evaluate_cv(
+        os.path.join(DATA_PATH, "../models"),
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "hpc/cv"),
+        os.path.join(DATA_PATH, "../models/output"),
+        with_mfr=False
+        # drop_features="orig_same_order",
+    )
+    # feature_ablation(os.path.join(DATA_PATH, "hpc/feature_ablation.txt"))
