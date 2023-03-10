@@ -4327,7 +4327,7 @@ fnk	fnk
 he	he
 his	his
 worth	worth
-d	d
+d	the
 price	price
 "	"
 
@@ -7578,7 +7578,7 @@ chinchilla's	chinchilla's
 k	k
 michelle	michelle
 met	met
-yo	yo
+yo	you
 match	match
 that	that
 fonk	fonk
@@ -8044,7 +8044,7 @@ for	for
 that	that
 free	free
 meal	meal
-tho	though
+tho	tho
 :	:
 i	i
 

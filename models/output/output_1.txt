@@ -5162,7 +5162,7 @@ to	to
 eat	eat
 ?	?
 
-dd	dd
+dd	did
 dude	dude
 has	has
 voted	voted
@@ -8283,7 +8283,7 @@ http://t.co/0u1ogi87ku	http://t.co/0u1ogi87ku
 i	i
 realy	realy
 nid	nid
-2	to
+2	2
 start	start
 meetin	meetin
 new	new

@@ -4,10 +4,11 @@ from lexnorm.generate_extract.filtering import is_eligible
 from lexnorm.data.baseline import write
 
 
-def load_candidates(candidates_path, shuffle=False):
+def load_candidates(candidates_path, random_state=None, shuffle=False):
     """
     Opens candidates dataframe produced from process_data correctly
 
+    :param random_state: Random state for shuffle
     :param candidates_path: Path to candidates dataframe saved in csv format
     :param shuffle: Whether to shuffle the dataframe rows (avoids various issues)
     :return: Candidates dataframe
@@ -18,7 +19,7 @@ def load_candidates(candidates_path, shuffle=False):
     if shuffle:
         candidates_df = candidates_df.sample(
             frac=1,
-            # random_state=42,
+            random_state=random_state,
         )
     return candidates_df
 

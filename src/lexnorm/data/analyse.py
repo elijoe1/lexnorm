@@ -1,9 +1,7 @@
-from lexnorm.data.normEval import loadNormData
 from lexnorm.generate_extract.filtering import is_eligible
 
 
-def analyse(data_path):
-    raw, norm = loadNormData(data_path)
+def analyse(raw, norm):
     eligible = 0
     normalisations = 0
     for raw_tweet, norm_tweet in zip(raw, norm):

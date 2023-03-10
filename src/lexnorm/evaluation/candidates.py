@@ -1,3 +1,5 @@
+from sklearn.model_selection import KFold
+
 from lexnorm.data.normEval import loadNormData
 import pandas as pd
 import os
@@ -13,7 +15,7 @@ import statistics
 import numpy as np
 
 
-def modules(gold_path, candidates, verbose=True):
+def modules(raw, norm, candidates, verbose=True):
     """
     Analyse recall of candidate generation modules (split, clipping, spellcheck, norm_dict, embeddings) on normalisations (e.g.
     where the correct normalisation is not the original token), and give average candidates generated/token over whole data.
@@ -34,9 +36,8 @@ def modules(gold_path, candidates, verbose=True):
         "norms_seen",
         "embeddings_rank",
     ]
-    raw, norm = loadNormData(gold_path)
     candidates = link_to_gold(candidates, raw, norm)
-    num_eligible, num_norms = analyse(gold_path)
+    num_eligible, num_norms = analyse(raw, norm)
     modules = {}
     resp = {}
     for column in columns:
@@ -229,12 +230,51 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=1, norms_only=
     )
 
 
+def evaluate_cv(model_dir, tweets_path, df_dir):
+    raw, norm = loadNormData(tweets_path)
+    raw = np.array(raw, dtype=object)
+    norm = np.array(norm, dtype=object)
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    comb_raw = []
+    comb_norm = []
+    comb_pred_df = pd.DataFrame()
+    offset = 0
+    for i, folds in enumerate(kf.split(raw, norm)):
+        test_df = create_index(
+            load_candidates(
+                os.path.join(DATA_PATH, df_dir, f"test_{i}.txt"), shuffle=True
+            ),
+            offset,
+        )
+        offset += test_df.tok_id.nunique()
+        train_idx, test_idx = folds
+        comb_raw += raw[test_idx].tolist()
+        comb_norm += norm[test_idx].tolist()
+        clf = load(os.path.join(DATA_PATH, model_dir, f"rf_{i}.joblib"))
+        comb_pred_df = pd.concat([comb_pred_df, predict_probs(clf, test_df)])
+    ranking(comb_raw, comb_norm, comb_pred_df)
+    not_generated(comb_raw, comb_norm, comb_pred_df)
+    modules(comb_raw, comb_norm, comb_pred_df)
+
+
+def evaluate(model_path, tweets_path, df_path):
+    # NOTE assumes create_index already saved to file, as is fine with non-cv operation
+    raw, norm = loadNormData(tweets_path)
+    test_df = load_candidates(df_path, shuffle=True)
+    clf = load(model_path)
+    ranking(raw, norm, predict_probs(clf, test_df))
+    not_generated(raw, norm, test_df)
+    modules(raw, norm, test_df)
+
+
 if __name__ == "__main__":
-    data = load_candidates(
-        os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"), shuffle=True
+    # evaluate(
+    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
+    #     os.path.join(DATA_PATH, "raw/dev.norm"),
+    #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
+    # )
+    evaluate_cv(
+        os.path.join(DATA_PATH, "../models"),
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "hpc/cv"),
     )
-    raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
-    clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
-    ranks = ranking(raw, norm, predict_probs(clf, data))
-    not_generated(raw, norm, data)
-    modules(os.path.join(DATA_PATH, "raw/dev.norm"), data)

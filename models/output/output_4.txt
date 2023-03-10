@@ -1720,7 +1720,7 @@ body	body
 feels	feels
 so	so
 jank	jank
-rn	rn
+rn	right now
 it's	it's
 dispicable	dispicable
 
@@ -7318,7 +7318,7 @@ on	on
 lmaoo	lmaoo
 my	my
 fault	fault
-yo	yo
+yo	you
 ima	i'm going to
 let	let
 you	you
@@ -8234,7 +8234,7 @@ http://t.co/2vvxfbu5fp	http://t.co/2vvxfbu5fp
 @yusufrasheedat1	@yusufrasheedat1
 hapi	happy
 birthday	birthday
-2	to
+2	2
 my	my
 lovely	lovely
 angel	angel

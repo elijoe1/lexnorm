@@ -6446,7 +6446,7 @@ rt	rt
 :	:
 rt	retweet
 if	if
-ur	you're
+ur	your
 still	still
 up	up
 becuz	becuz
@@ -8055,7 +8055,7 @@ dat	that
 i	i
 g	g
 g	g
-y	y
+y	why
 
 @lastqueenjay__	@lastqueenjay__
 @__nylagrace	@__nylagrace
