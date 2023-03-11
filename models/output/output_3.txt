@@ -7578,7 +7578,7 @@ chinchilla's	chinchilla's
 k	k
 michelle	michelle
 met	met
-yo	you
+yo	yo
 match	match
 that	that
 fonk	fonk
@@ -8044,7 +8044,7 @@ for	for
 that	that
 free	free
 meal	meal
-tho	tho
+tho	though
 :	:
 i	i
 
@@ -8503,7 +8503,7 @@ good	good
 night	night
 lmfaooo	lmfaooo
 this	this
-hw	homework
+hw	hw
 shit	shit
 aint	ain't
 working	working

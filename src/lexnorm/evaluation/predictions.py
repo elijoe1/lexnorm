@@ -75,7 +75,7 @@ def precision_recall_f1(raw, gold, pred):
             wordGold = wordGold.lower()
             wordPred = wordPred.lower()
             if wordRaw != wordGold and wordPred != wordGold:
-                # annotators normalised, system normalised but incorrectly
+                # annotators normalised, system normalised but incorrectly / did not normalise
                 fn += 1
             elif wordRaw == wordGold and wordPred != wordRaw:
                 # annotators did not normalise, system normalised

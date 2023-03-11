@@ -7,7 +7,7 @@ from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.process import create_index, link_to_gold
 from lexnorm.generate_extract.filtering import is_eligible
 from lexnorm.models.normalise import load_candidates
-from lexnorm.models.random_forest import predict_probs
+from lexnorm.models.predict import predict_probs
 from lexnorm.data.analyse import analyse
 from collections import Counter
 from joblib import load

@@ -25,7 +25,6 @@ def load_candidates(candidates_path, random_state=None, shuffle=False):
 
 
 def prep_train(annotated_dataframe):
-    # na_values specified as pandas would otherwise detect candidate 'NaN' as NaN rather than keeping as the string
     train_X = annotated_dataframe.drop(
         [
             "correct",
@@ -34,18 +33,29 @@ def prep_train(annotated_dataframe):
             "prev",
             "next",
             "tok_id",
-            # "process",
-            # "tweet",
-            # "tok",
-            # "twitter_uni",
-            # "twitter_bi_prev",
-            # "twitter_bi_next",
-            # "wiki_uni",
-            # "wiki_bi_prev",
-            # "wiki_bi_next",
         ],
         axis=1,
-    ).fillna(0)
+    )
+    fill_columns = [
+        "from_clipping",
+        "from_original_token",
+        "from_split",
+        "norms_seen",
+        "in_lexicon",
+        "same_order",
+        "orig_norms_seen",
+        "orig_in_lexicon",
+        "twitter_uni",
+        "twitter_bi_prev",
+        "twitter_bi_next",
+        "wiki_uni",
+        "wiki_bi_prev",
+        "wiki_bi_next",
+    ]
+    train_X[fill_columns] = train_X[fill_columns].fillna(0)
+    train_X.spellcheck_rank = train_X.spellcheck_rank.fillna(25)
+    train_X.embeddings_rank = train_X.embeddings_rank.fillna(11)
+    train_X.cosine_to_orig = train_X.cosine_to_orig.fillna(-1)
     train_y = annotated_dataframe.fillna(0)["correct"]
     return train_X, train_y
 
@@ -57,19 +67,34 @@ def prep_test(unannotated_dataframe):
             "prev",
             "next",
             "tok_id",
-            # "process",
-            # "tweet",
-            # "tok",
-            # "twitter_uni",
-            # "twitter_bi_prev",
-            # "twitter_bi_next",
-            # "wiki_uni",
-            # "wiki_bi_prev",
-            # "wiki_bi_next",
         ],
         axis=1,
     )
-    test_X.fillna(0, inplace=True)
+    fill_columns = [
+        "from_clipping",
+        "from_original_token",
+        "from_split",
+        "norms_seen",
+        "in_lexicon",
+        "same_order",
+        "orig_norms_seen",
+        "orig_in_lexicon",
+        "twitter_uni",
+        "twitter_bi_prev",
+        "twitter_bi_next",
+        "wiki_uni",
+        "wiki_bi_prev",
+        "wiki_bi_next",
+    ]
+    # where filling with 0 is the intended behaviour
+    test_X[fill_columns] = test_X[fill_columns].fillna(0)
+    # Spylls has well-defined suggestion limit:
+    # 15 edit based + 4 ngram based + 3 compound + 2 phonetic = 24
+    test_X.spellcheck_rank = test_X.spellcheck_rank.fillna(25)
+    # max 10 embeddings returned
+    test_X.embeddings_rank = test_X.embeddings_rank.fillna(11)
+    # if cannot calculate cosine similarity, make as dissimilar as possible
+    test_X.cosine_to_orig = test_X.cosine_to_orig.fillna(-1)
     return test_X
 
 

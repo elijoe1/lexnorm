@@ -1759,7 +1759,7 @@ to	to
 say	say
 about	about
 another	another
-mf	mother fucker
+mf	mother fuckers
 cuz	because
 alot	alot
 ya	ya
@@ -2742,7 +2742,7 @@ i	i
 hate	hate
 is	is
 a	a
-mf	mother fucker
+mf	mother fuckers
 that	that
 fuck	fuck
 wit	with
@@ -8114,7 +8114,7 @@ rt	rt
 @_amariw	@_amariw
 who	who
 at	at
-yo	your
+yo	yo
 house	house
 
 #gta	#gta
@@ -8787,7 +8787,7 @@ wad	wad
 vvvvvvvv	vvvvvvvv
 good	good
 thanks	thanks
-4	for
+4	4
 not	not
 showing	showing
 barkat	barkat

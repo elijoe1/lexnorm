@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import pandas as pd
 from joblib import dump, load
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.model_selection import KFold
@@ -11,10 +10,12 @@ from lexnorm.data.normEval import loadNormData
 from lexnorm.definitions import DATA_PATH
 from lexnorm.evaluation.predictions import evaluate_predictions
 from lexnorm.generate_extract.process import create_index
-from lexnorm.models.normalise import prep_train, prep_test, normalise, load_candidates
+
+from lexnorm.models.normalise import prep_train, normalise, load_candidates
+from lexnorm.models.predict import predict_probs, predict_normalisations
 
 
-def train(candidates, random_state=None, output_path=None):
+def train_rf(candidates, random_state=None, output_path=None):
     train_X, train_y = prep_train(candidates)
     rf_clf = RandomForestClassifier(
         n_estimators=100,
@@ -24,6 +25,7 @@ def train(candidates, random_state=None, output_path=None):
         # class_weight="balanced",
         oob_score=True,
         # suggested by scikit docs as good to prevent over-fitting (seems to work a little...?)
+        # pre-pruning
         min_samples_leaf=5
         # prevent over-fitting
         # turns out don't need this with abstaining if low prob. Brings precision down, recall up.
@@ -43,32 +45,6 @@ def train_adaboost(candidates, random_state=None, output_path=None):
     if output_path is not None:
         dump(rf_clf, output_path)
     return rf_clf
-
-
-def predict_probs(model, candidates):
-    features = prep_test(candidates)
-    probs = model.predict_proba(features)
-    candidates = candidates.copy()
-    candidates["probs"] = probs[:, 1]
-    return candidates
-
-
-def predict_normalisations(dataframe, threshold=0.5):
-    # 0.5 is not an arbitrary threshold - if above .predict function of classifier would predict class 1
-    # as takes class with highest proba and there are only two classes. NOTE that .predict_proba should not be interpreted
-    # as confidence level of class for random forest - just number input to decision function.
-    # TODO: if tie for highest probability, just chooses arbitrarily
-    pred_df = dataframe.sort_values("probs", ascending=False).drop_duplicates(
-        ["tok_id"]
-    )
-    pred_df = pred_df.loc[pred_df.probs >= threshold]
-    # pred_df = pred_df.sort_values(["tok_id"]).index.tolist()
-    pred_df["candidate"] = pred_df.index.values
-    # as values are singleton lists
-    return {
-        k: v[0]
-        for k, v in pred_df.groupby("tok_id")["candidate"].apply(list).to_dict().items()
-    }
 
 
 def train_predict_evaluate_cv(
@@ -115,7 +91,7 @@ def train_predict_evaluate_cv(
             )
         ).drop(columns=drop_features if drop_features is not None else [])
         if train_first:
-            clf = train(
+            clf = train_rf(
                 train_df,
                 model_rng,
                 os.path.join(DATA_PATH, model_dir, f"rf_{i}.joblib")
@@ -162,7 +138,7 @@ def train_predict_evaluate(
     )
     raw, norm = loadNormData(test_tweets_path)
     if train_first:
-        clf = train(train_df, model_rng, model_path)
+        clf = train_rf(train_df, model_rng, model_path)
     else:
         clf = load(model_path)
     pred_tokens = predict_normalisations(
@@ -194,6 +170,7 @@ def feature_ablation(output_path):
         "same_order",
         "orig_norms_seen",
         "orig_in_lexicon",
+        # TODO remove
         "orig_same_order",
         "orig_length",
         "twitter_uni",
@@ -228,14 +205,15 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "../models/output.txt"),
     #     # train_first=True,
     #     # drop_features="orig_same_order",
-    #     with_mfr=True,
+    #     # with_mfr=True,
     # )
     train_predict_evaluate_cv(
         os.path.join(DATA_PATH, "../models"),
         os.path.join(DATA_PATH, "processed/combined.txt"),
         os.path.join(DATA_PATH, "hpc/cv"),
         os.path.join(DATA_PATH, "../models/output"),
-        with_mfr=False
+        # with_mfr=True
         # drop_features="orig_same_order",
+        train_first=True,
     )
     # feature_ablation(os.path.join(DATA_PATH, "hpc/feature_ablation.txt"))

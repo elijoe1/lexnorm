@@ -32,7 +32,7 @@ why	why
 dese	dese
 niggas	niggers
 think	think
-dey	dey
+dey	they
 doin	doing
 summn	summn
 
@@ -3027,7 +3027,7 @@ watching	watching
 lip	lip
 sync	sync
 battle	battle
-w	with
+w	w
 .	.
 j	j
 .	.
@@ -5791,7 +5791,7 @@ rt	rt
 masso	masso
 wants	wants
 the	the
-d	the
+d	d
 @johnmasso77	@johnmasso77
 
 rt	rt
@@ -8092,7 +8092,7 @@ http://t.co/xk3ocvtagb	http://t.co/xk3ocvtagb
 
 ewa	ewa
 man	man
-gd	good
+gd	gd
 ni	ni
 akong	akong
 utok	utok
@@ -8232,7 +8232,7 @@ man	man
 henny	henny
 will	will
 change	change
-yo	your
+yo	you
 whole	whole
 fuccin	fuccin
 life	life
@@ -8956,7 +8956,7 @@ girls	girls
 "	"
 if	if
 you	you
-pre	preorder
+pre	pre
 order	order
 the	the
 album	album
