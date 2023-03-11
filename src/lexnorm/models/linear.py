@@ -16,7 +16,7 @@ from lexnorm.models.predict import predict_normalisations, predict_probs
 
 def train_logreg(candidates, output_path=None):
     train_X, train_y = prep_train(candidates)
-    train_X = train_X.drop(columns="orig_same_order")
+    train_X = train_X
     pipe = make_pipeline(
         StandardScaler(),
         LogisticRegression(
@@ -42,9 +42,7 @@ if __name__ == "__main__":
     cands = load_candidates(os.path.join(DATA_PATH, "hpc/train_pipeline.txt"))
     model = train_logreg(cands)
     test_cands = load_candidates(os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"))
-    predictions = predict_normalisations(
-        predict_probs(model, test_cands.drop(columns="orig_same_order")), threshold=0
-    )
+    predictions = predict_normalisations(predict_probs(model, test_cands), threshold=0)
     raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/dev.norm"))
     predictions = normalise(raw, predictions)
     evaluate_predictions(raw, norm, predictions)

@@ -2,7 +2,7 @@
 bruh	brother
 get	get
 out	out
-yo	your
+yo	you
 feelings	feelings
 lol	lol
 
@@ -1395,7 +1395,7 @@ centre	centre
 @byxns	@byxns
 @exokkkai	@exokkkai
 @kyugngsoo	@kyugngsoo
-nah	no
+nah	now
 you	you
 too	too
 !	!
@@ -2595,7 +2595,7 @@ for	for
 that	that
 free	free
 meal	meal
-tho	though
+tho	tho
 :	:
 i	i
 
@@ -3005,7 +3005,7 @@ liverpool	liverpool
 so	so
 i	i
 can	can
-b	be
+b	b
 away	away
 like	like
 ?	?
@@ -3027,7 +3027,7 @@ watching	watching
 lip	lip
 sync	sync
 battle	battle
-w	w
+w	with
 .	.
 j	j
 .	.
@@ -5234,7 +5234,7 @@ life	life
 nd	and
 prosperity	prosperity
 ........	........
-nd	nd
+nd	and
 wish	wish
 u	you
 all	all
@@ -5791,7 +5791,7 @@ rt	rt
 masso	masso
 wants	wants
 the	the
-d	d
+d	the
 @johnmasso77	@johnmasso77
 
 rt	rt
@@ -6547,7 +6547,7 @@ but	but
 theyre	they're
 like	like
 ,	,
-nah	nah
+nah	no
 son	son
 ,	,
 u	you
@@ -6927,7 +6927,7 @@ u	you
 go	go
 out	out
 then	then
-ur	your
+ur	you're
 no	no
 even	even
 out	out

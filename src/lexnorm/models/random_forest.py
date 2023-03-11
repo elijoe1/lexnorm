@@ -203,8 +203,8 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
     #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
     #     os.path.join(DATA_PATH, "../models/output.txt"),
-    #     # train_first=True,
-    #     # drop_features="orig_same_order",
+    #     train_first=True,
+    #     # drop_features="cosine_to_orig",
     #     # with_mfr=True,
     # )
     train_predict_evaluate_cv(
@@ -213,7 +213,7 @@ if __name__ == "__main__":
         os.path.join(DATA_PATH, "hpc/cv"),
         os.path.join(DATA_PATH, "../models/output"),
         # with_mfr=True
-        # drop_features="orig_same_order",
+        # drop_features="orig_norms_seen",
         train_first=True,
     )
     # feature_ablation(os.path.join(DATA_PATH, "hpc/feature_ablation.txt"))

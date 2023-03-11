@@ -1,4 +1,6 @@
+import numpy as np
 import pandas as pd
+from sklearn.impute import SimpleImputer
 
 from lexnorm.generate_extract.filtering import is_eligible
 from lexnorm.data.baseline import write
@@ -36,26 +38,12 @@ def prep_train(annotated_dataframe):
         ],
         axis=1,
     )
-    fill_columns = [
-        "from_clipping",
-        "from_original_token",
-        "from_split",
-        "norms_seen",
-        "in_lexicon",
-        "same_order",
-        "orig_norms_seen",
-        "orig_in_lexicon",
-        "twitter_uni",
-        "twitter_bi_prev",
-        "twitter_bi_next",
-        "wiki_uni",
-        "wiki_bi_prev",
-        "wiki_bi_next",
-    ]
-    train_X[fill_columns] = train_X[fill_columns].fillna(0)
     train_X.spellcheck_rank = train_X.spellcheck_rank.fillna(25)
     train_X.embeddings_rank = train_X.embeddings_rank.fillna(11)
     train_X.cosine_to_orig = train_X.cosine_to_orig.fillna(-1)
+    train_X = train_X.fillna(0)
+    # imp_mean = SimpleImputer(missing_values=np.nan, strategy="mean")
+    # train_X = imp_mean.fit_transform(train_X)
     train_y = annotated_dataframe.fillna(0)["correct"]
     return train_X, train_y
 
@@ -70,24 +58,6 @@ def prep_test(unannotated_dataframe):
         ],
         axis=1,
     )
-    fill_columns = [
-        "from_clipping",
-        "from_original_token",
-        "from_split",
-        "norms_seen",
-        "in_lexicon",
-        "same_order",
-        "orig_norms_seen",
-        "orig_in_lexicon",
-        "twitter_uni",
-        "twitter_bi_prev",
-        "twitter_bi_next",
-        "wiki_uni",
-        "wiki_bi_prev",
-        "wiki_bi_next",
-    ]
-    # where filling with 0 is the intended behaviour
-    test_X[fill_columns] = test_X[fill_columns].fillna(0)
     # Spylls has well-defined suggestion limit:
     # 15 edit based + 4 ngram based + 3 compound + 2 phonetic = 24
     test_X.spellcheck_rank = test_X.spellcheck_rank.fillna(25)
@@ -95,6 +65,10 @@ def prep_test(unannotated_dataframe):
     test_X.embeddings_rank = test_X.embeddings_rank.fillna(11)
     # if cannot calculate cosine similarity, make as dissimilar as possible
     test_X.cosine_to_orig = test_X.cosine_to_orig.fillna(-1)
+    # where filling with 0 is the intended behaviour
+    test_X = test_X.fillna(0)
+    # imp_mean = SimpleImputer(missing_values=np.nan, strategy="mean")
+    # test_X = imp_mean.fit_transform(test_X)
     return test_X
 
 
