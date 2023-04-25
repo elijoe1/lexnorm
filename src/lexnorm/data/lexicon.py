@@ -202,16 +202,17 @@ def find_best_lexicon():
 
 
 if __name__ == "__main__":
-    # lex = build(
-    #     {"english", "american"},
-    #     {"contractions", "proper-names", "upper", "words", "abbreviations"},
-    #     70,
-    #     0,
-    #     False,
-    #     False,
-    # )
     # find_best_lexicon()
-    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "processed/combined.txt"))
+    lex = build(
+        {"english", "american"},
+        {"contractions", "proper-names", "upper", "words", "abbreviations"},
+        70,
+        1,
+        True,
+        False,
+    )
+    with open(os.path.join(DATA_PATH, "processed/task_lexicon.txt"), "wb") as f:
+        pickle.dump(lex, f)
     lex = build(
         {"english", "american"},
         {"contractions", "proper-names", "upper", "words"},
@@ -223,4 +224,5 @@ if __name__ == "__main__":
     lex = refine(lex.union(build_interjections()))
     with open(os.path.join(DATA_PATH, "processed/feature_lexicon.txt"), "wb") as f:
         pickle.dump(lex, f)
+    # raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "processed/combined.txt"))
     # evaluate(raw, norm, lex, True)
