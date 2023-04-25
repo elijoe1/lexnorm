@@ -38,4 +38,4 @@ def construct(raw, norm, exclude_mto=True):
 
 if __name__ == "__main__":
     raw, norm = loadNormData(os.path.join(DATA_PATH, "processed/combined.txt"))
-    print(construct(raw, norm))
+    print(construct(raw, norm)["wat"])
