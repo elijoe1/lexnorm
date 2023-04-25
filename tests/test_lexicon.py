@@ -7,7 +7,6 @@ def test_build():
     lex1 = lexicon.build(
         {"english", "american"},
         {"words", "upper", "proper-names", "contractions", "abbreviations"},
-        profane=False,
     )
     lex2 = set()
     with open(os.path.join(DATA_PATH, "test/american-70.txt")) as lex:
@@ -21,7 +20,6 @@ def test_build():
         {"words", "upper", "proper-names", "contractions", "abbreviations"},
         95,
         3,
-        profane=False,
     )
     lex2 = set()
     with open(os.path.join(DATA_PATH, "test/australian-95.txt")) as lex:
@@ -35,7 +33,6 @@ def test_build():
         {"words", "upper", "proper-names", "contractions", "abbreviations"},
         35,
         1,
-        profane=False,
     )
     lex2 = set()
     with open(os.path.join(DATA_PATH, "test/british-35.txt")) as lex:

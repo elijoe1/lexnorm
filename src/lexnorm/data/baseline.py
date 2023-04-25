@@ -1,3 +1,5 @@
+# FROM SHARED TASK
+
 """
 This script provides the baselines for the lexical normalization task, 
 which is the translation of social media text to canonical text:
@@ -5,7 +7,7 @@ new pix      comming tomoroe
 new pictures coming  tomorrow
 
 The script provides two different strategies, Leave-As-Is (LAI) and 
-Most-Frequent-Replacement (MFR). 
+Most-Frequent-Replacement (MFR).
 """
 
 from optparse import OptionParser

@@ -1,9 +1,9 @@
 import os
 import pickle
+from itertools import chain, combinations
 
 import requests
 
-from lexnorm.data import norm_dict
 from lexnorm.definitions import DATA_PATH
 from lexnorm.definitions import LEX_PATH
 from lexnorm.evaluation import condition_normalisation
@@ -28,24 +28,26 @@ def build(
     max_size: int = 70,
     max_variant: int = 0,
     special: bool = True,
-    profane: bool = True,
+    remove_offensive: bool = False,
     lex_path: str = LEX_PATH,
     verbose: bool = False,
 ) -> set[str]:
     """
     Create (lowercase) word set from SCOWL word lists extending perl script 'mk-list'
-    @param languages: including english, american, australian, canadian, british, british_z.
+
+    :param languages: including english, american, australian, canadian, british, british_z.
     english should always be included.
-    @param subsets: within each language. Including abbreviations, contractions, proper-names, upper, words
-    @param max_size: up to 95. 70 is the recommended large size, 50 the medium and 35 the small
-    @param max_variant: word variant inclusion level, up to 3 (variants up to level 2 are locale-specific)
-    @param profane: if profanity should be included (from misc folder in scowl)
-    @param special: if the special word lists (hacker and roman numerals) should be included if the size is large enough
-    @param lex_path: path to SCOWL word lists
-    @param verbose: if the word lists used should be output
-    @return: set containing all words in corresponding word lists
+    :param subsets: within each language. Including abbreviations, contractions, proper-names, upper, words
+    :param max_size: up to 95. 70 is the recommended large size, 50 the medium and 35 the small
+    :param max_variant: word variant inclusion level, up to 3 (variants up to level 2 are locale-specific)
+    :param remove_offensive: if offensive terms should be removed (from misc folder in scowl)
+    :param special: if the special word lists (hacker and roman numerals) should be included if the size is large enough
+    :param lex_path: path to SCOWL word lists
+    :param verbose: if the word lists used should be output
+    :return: set containing all words in corresponding word lists
     """
     lexicon = set()
+    offensive = set()
     files = os.listdir(lex_path)
     components = []
     categories = languages.intersection(defined_languages)
@@ -68,34 +70,41 @@ def build(
             components.append("special-roman-numerals.35")
         if max_size >= 50:
             components.append("special-hacker.50")
-    if profane:
-        components.append("../misc/profane.1")
-        components.append("../misc/profane.3")
+    if remove_offensive:
+        for component in ["../misc/offensive.1", "../misc/offensive.2"]:
+            with open(os.path.join(LEX_PATH, component), encoding="iso-8859-1") as file:
+                for line in file:
+                    offensive.add(line.strip().lower())
     if verbose:
         print(f"Component files: {components}")
     for component in components:
         with open(os.path.join(LEX_PATH, component), encoding="iso-8859-1") as file:
             for line in file:
                 lexicon.add(line.strip().lower())
-    return lexicon
+    return lexicon - offensive
 
 
 def refine(lexicon: set[str]) -> set[str]:
     filtered_lexicon = set()
     for word in lexicon:
-        if len(word) <= 1 and word not in ["a", "i"]:
+        if len(word) == 1 and word not in ["a", "i"]:
+            continue
+        if len(
+            word
+        ) == 2 and word not in "am, an, as, at, ax, be, by, do, go, he, if, in, is, it, me, my, no, of, on, or, ox, so, to, up, us, we".split(
+            ", "
+        ):
             continue
         filtered_lexicon.add(word)
     return filtered_lexicon
 
 
-def build_abbreviations():
+def build_interjections():
     abbrev_lex = set()
     params = {
         "action": "query",
         "list": "categorymembers",
         "cmtitle": "Category:English_internet_laughter_slang",
-        # "cmtitle": "Category:English_internet_slang",
         "cmprop": "title",
         "cmlimit": "max",
         "format": "json",
@@ -117,68 +126,101 @@ def build_abbreviations():
     return abbrev_lex
 
 
-def evaluate(norm_dict, lexicon):
+def evaluate(raw, norm, lexicon, verbose=False):
     """
     Outputs statistics for a given lexicon
     """
-    a, b, c, d = condition_normalisation.contingency_from_dict(
-        norm_dict, lambda x: x[0] in lexicon
+    a, b, c, d = condition_normalisation.contingency(
+        raw, norm, lambda x: x[0] in lexicon
     )
-    print(
-        f"Correlation of in lexicon with normalisation: {condition_normalisation.correlation(a, b, c, d):.2f}"
-    )
-    print(f"Most common normalised raw phrases in lexicon: {b.most_common(20)}")
-    print(f"Most common un-normalised raw phrases not in lexicon: {c.most_common(20)}")
-    a, b, _, _ = condition_normalisation.contingency_from_dict(
-        norm_dict, lambda x: x[1] not in lexicon
-    )
-    print(f"Most common token normalisations not in lexicon: {(a + b).most_common(20)}")
+    correlation = condition_normalisation.correlation(a, b, c, d)
+    if verbose:
+        print(f"Correlation of in lexicon with normalisation: {correlation:.3f}")
+        print(f"Most common normalised raw tokens in lexicon: {b.most_common(20)}")
+        print(
+            f"Most common un-normalised raw tokens not in lexicon: {c.most_common(20)}"
+        )
+        a, b, c, d = condition_normalisation.contingency(
+            raw,
+            norm,
+            lambda x: any(word not in lexicon for word in x[1].split()),
+        )
+        print(
+            f"Most common token normalisations not in lexicon: {b.most_common(20)}: {sum(b.values())/sum((b+d).values())*100:.2f}% of normalisations."
+        )
+    return correlation
+
+
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
+
+def find_best_lexicon():
+    raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "processed/combined.txt"))
+    abbrevs = build_interjections()
+    max_performance = 0
+    best_params = []
+    for locale in list(defined_languages - {"english"}):
+        for subsets in list(powerset(defined_subsets)):
+            for size in defined_sizes:
+                for var in defined_variants:
+                    for special in (True, False):
+                        for remove_offensive in (True, False):
+                            for do_refine in (True, False):
+                                for add_intj in (True, False):
+                                    lex = build(
+                                        {locale, "english"},
+                                        set(subsets),
+                                        size,
+                                        var,
+                                        special,
+                                        remove_offensive,
+                                    )
+                                    if add_intj:
+                                        lex = lex.union(abbrevs)
+                                    if do_refine:
+                                        lex = refine(lex)
+                                    corr = evaluate(raw, norm, lex)
+                                    print(
+                                        f"{locale}, {subsets}, {size}, {var}, {special}, {remove_offensive}, {do_refine}, {add_intj}: {corr:.3f}"
+                                    )
+                                    if corr > max_performance:
+                                        max_performance = corr
+                                        best_params = [
+                                            locale,
+                                            subsets,
+                                            size,
+                                            var,
+                                            special,
+                                            remove_offensive,
+                                            do_refine,
+                                            add_intj,
+                                        ]
+    return best_params
 
 
 if __name__ == "__main__":
-    # def powerset(iterable):
-    #     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    #     s = list(iterable)
-    #     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
-    # abbrevs = build_abbreviations()
-    # max_performance = 0
-    # # for languages in list(powerset(defined_languages - {"english"})):
-    # # for subsets in list(powerset(defined_subsets)):
-    # for size in {10, 20, 35, 50, 70}:
-    #     for var in defined_variants:
-    #         for special in (True, False):
-    #             for profane in (True, False):
-    #                 lex = refine(
-    #                     build(
-    #                         {"american", "english"},
-    #                         {"words", "contractions", "upper", "proper-names"},
-    #                         size,
-    #                         var,
-    #                         True,
-    #                         True,
-    #                     ).union(abbrevs)
-    #                 )
-    #                 max_performance = max(
-    #                     max_performance,
-    #                     condition_normalisation.correlation(
-    #                         *condition_normalisation.contingency(
-    #                             full_raw,
-    #                             full_norm,
-    #                             lambda x: x in lex,
-    #                             pair=True,
-    #                         )
-    #                     ),
-    #                 )
-    #                 print(max_performance)
+    # lex = build(
+    #     {"english", "american"},
+    #     {"contractions", "proper-names", "upper", "words", "abbreviations"},
+    #     70,
+    #     0,
+    #     False,
+    #     False,
+    # )
+    # find_best_lexicon()
     raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "processed/combined.txt"))
-    normalisations = norm_dict.construct(raw, norm)
     lex = build(
         {"english", "american"},
         {"contractions", "proper-names", "upper", "words"},
         50,
         1,
+        True,
+        True,
     )
-    lex = refine(lex.union(build_abbreviations()))
-    with open(os.path.join(DATA_PATH, "processed/lexicon.txt"), "wb") as f:
+    lex = refine(lex.union(build_interjections()))
+    with open(os.path.join(DATA_PATH, "processed/feature_lexicon.txt"), "wb") as f:
         pickle.dump(lex, f)
-    evaluate(normalisations, lex)
+    # evaluate(raw, norm, lex, True)

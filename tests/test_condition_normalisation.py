@@ -1,8 +1,6 @@
 from lexnorm.evaluation import condition_normalisation
 from collections import Counter
-from lexnorm.data import baseline
 from lexnorm.data import norm_dict
-import os
 
 
 def test_correlation():
@@ -26,7 +24,7 @@ def test_contingency_from_dict(tmp_path):
     ]
     normalisations = norm_dict.construct(raw, norm)
     a, b, c, d = condition_normalisation.contingency_from_dict(
-        normalisations, lambda x: len(x[0]) <= 4
+        normalisations, lambda x: len(x[0]) <= 4, eligible_only=False
     )
     assert dict(a) == {("my", "my"): 1, ("get", "get"): 1}
     assert dict(b) == {("loll", "lol"): 1, ("outt", "out"): 1}
@@ -39,3 +37,23 @@ def test_contingency_from_dict(tmp_path):
         ("trippin", "tripping"): 1,
         ("youre", "you're"): 1,
     }
+
+
+def test_contingency():
+    raw = [
+        ["bruther", "get", "outt", "youre", "feelins", "loll"],
+        ["my", "brother", "thinkgs", "youre", "trippin"],
+    ]
+    norm = [
+        ["brother", "get", "out", "your", "feelings", "lol"],
+        ["my", "brother", "thinks", "you're", "tripping"],
+    ]
+    normalisations = norm_dict.construct(raw, norm)
+    assert condition_normalisation.contingency_from_dict(
+        normalisations, lambda x: len(x[0]) <= 3
+    ) == condition_normalisation.contingency(raw, norm, lambda x: len(x[0]) <= 3)
+    assert condition_normalisation.contingency_from_dict(
+        normalisations, lambda x: len(x[0]) <= 3, result="raw", eligible_only=False
+    ) == condition_normalisation.contingency(
+        raw, norm, lambda x: len(x[0]) <= 3, result="raw"
+    )
