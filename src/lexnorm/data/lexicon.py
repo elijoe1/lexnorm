@@ -224,5 +224,7 @@ if __name__ == "__main__":
     lex = refine(lex.union(build_interjections()))
     with open(os.path.join(DATA_PATH, "processed/feature_lexicon.txt"), "wb") as f:
         pickle.dump(lex, f)
+    # with open(os.path.join(DATA_PATH, "processed/feature_lexicon.txt"), "rb") as f:
+    #     lex = pickle.load(f)
     # raw, norm = normEval.loadNormData(os.path.join(DATA_PATH, "processed/combined.txt"))
     # evaluate(raw, norm, lex, True)

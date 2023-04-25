@@ -9,9 +9,9 @@ all: data
 data:
 	python -m lexnorm.data.concatenate
 	python -m lexnorm.data.lexicon
-#	./data/cpp/load_ngrams ./data/external/monoise_data/twitter.ngr.bin ./data/interim/twitter_ngrams
-#	./data/cpp/load_ngrams ./data/external/monoise_data/wiki.ngr.bin ./data/interim/wiki_ngrams
-#	python -m lexnorm.data.word_ngrams
+	./data/cpp/load_ngrams ./data/external/monoise_data/twitter.ngr.bin ./data/interim/twitter_ngrams
+	./data/cpp/load_ngrams ./data/external/monoise_data/wiki.ngr.bin ./data/interim/wiki_ngrams
+	python -m lexnorm.data.word_ngrams
 	# make test lexica
 	cd data/external/scowl-2020.12.07; ./mk-list -v0 american 70 > ../../test/american-70.txt
 	iconv -f iso-8859-1 -t utf-8 data/test/american-70.txt > data/test/american-70-utf.txt

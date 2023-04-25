@@ -3,10 +3,9 @@ import pickle
 from collections import Counter
 
 from lexnorm.definitions import DATA_PATH
-from lexnorm.generate_extract.filtering import is_eligible
 
 
-def binary_to_pickle(ngram_path, output_path):
+def tsv_to_pickle(ngram_path, output_path):
     ngrams = Counter()
     with open(ngram_path) as f:
         for line in f:
@@ -26,19 +25,19 @@ def counter_from_pickle(counter_path):
 
 
 if __name__ == "__main__":
-    binary_to_pickle(
+    tsv_to_pickle(
         os.path.join(DATA_PATH, "interim/twitter_ngrams.1"),
         os.path.join(DATA_PATH, "processed/twitter_unigram_counter.pickle"),
     )
-    binary_to_pickle(
+    tsv_to_pickle(
         os.path.join(DATA_PATH, "interim/twitter_ngrams.2"),
         os.path.join(DATA_PATH, "processed/twitter_bigram_counter.pickle"),
     )
-    binary_to_pickle(
+    tsv_to_pickle(
         os.path.join(DATA_PATH, "interim/wiki_ngrams.1"),
         os.path.join(DATA_PATH, "processed/wiki_unigram_counter.pickle"),
     )
-    binary_to_pickle(
+    tsv_to_pickle(
         os.path.join(DATA_PATH, "interim/wiki_ngrams.2"),
         os.path.join(DATA_PATH, "processed/wiki_bigram_counter.pickle"),
     )
