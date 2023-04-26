@@ -196,24 +196,24 @@ def feature_ablation(output_path):
 
 
 if __name__ == "__main__":
-    # train_predict_evaluate(
-    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
-    #     os.path.join(DATA_PATH, "raw/train.norm"),
-    #     os.path.join(DATA_PATH, "raw/dev.norm"),
-    #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
-    #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
-    #     os.path.join(DATA_PATH, "../models/output.txt"),
-    #     train_first=True,
-    #     # drop_features="cosine_to_orig",
-    #     # with_mfr=True,
-    # )
-    train_predict_evaluate_cv(
-        os.path.join(DATA_PATH, "../models"),
-        os.path.join(DATA_PATH, "processed/combined.txt"),
-        os.path.join(DATA_PATH, "hpc/cv"),
-        os.path.join(DATA_PATH, "../models/output"),
-        # with_mfr=True
-        # drop_features="orig_norms_seen",
+    train_predict_evaluate(
+        os.path.join(DATA_PATH, "../models/rf.joblib"),
+        os.path.join(DATA_PATH, "raw/train.norm"),
+        os.path.join(DATA_PATH, "raw/dev.norm"),
+        os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
+        os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
+        os.path.join(DATA_PATH, "../models/output.txt"),
         train_first=True,
+        # drop_features="cosine_to_orig",
+        # with_mfr=True,
     )
+    # train_predict_evaluate_cv(
+    #     os.path.join(DATA_PATH, "../models"),
+    #     os.path.join(DATA_PATH, "processed/combined.txt"),
+    #     os.path.join(DATA_PATH, "hpc/cv"),
+    #     os.path.join(DATA_PATH, "../models/output"),
+    #     # with_mfr=True
+    #     # drop_features="orig_norms_seen",
+    #     train_first=True,
+    # )
     # feature_ablation(os.path.join(DATA_PATH, "hpc/feature_ablation.txt"))

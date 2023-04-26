@@ -137,3 +137,4 @@ processed/
 # no point - just intermediate files used in makefile pipeline
 interim/
 /data/test/
+/reports/

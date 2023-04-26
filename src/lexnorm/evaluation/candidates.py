@@ -268,13 +268,13 @@ def evaluate(model_path, tweets_path, df_path):
 
 
 if __name__ == "__main__":
-    # evaluate(
-    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
-    #     os.path.join(DATA_PATH, "raw/dev.norm"),
-    #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
-    # )
-    evaluate_cv(
-        os.path.join(DATA_PATH, "../models"),
-        os.path.join(DATA_PATH, "processed/combined.txt"),
-        os.path.join(DATA_PATH, "hpc/cv"),
+    evaluate(
+        os.path.join(DATA_PATH, "../models/rf.joblib"),
+        os.path.join(DATA_PATH, "raw/dev.norm"),
+        os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
     )
+    # evaluate_cv(
+    #     os.path.join(DATA_PATH, "../models"),
+    #     os.path.join(DATA_PATH, "processed/combined.txt"),
+    #     os.path.join(DATA_PATH, "hpc/cv"),
+    # )

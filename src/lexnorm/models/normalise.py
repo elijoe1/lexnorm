@@ -38,7 +38,7 @@ def prep_train(annotated_dataframe):
         ],
         axis=1,
     )
-    train_X.spellcheck_rank = train_X.spellcheck_rank.fillna(25)
+    train_X.spellcheck_rank = train_X.spellcheck_rank.fillna(23)
     train_X.embeddings_rank = train_X.embeddings_rank.fillna(11)
     train_X.cosine_to_orig = train_X.cosine_to_orig.fillna(-1)
     train_X = train_X.fillna(0)
@@ -59,8 +59,8 @@ def prep_test(unannotated_dataframe):
         axis=1,
     )
     # Spylls has well-defined suggestion limit:
-    # 15 edit based + 4 ngram based + 3 compound + 2 phonetic = 24
-    test_X.spellcheck_rank = test_X.spellcheck_rank.fillna(25)
+    # 15 edit based + 3 compound + 4 ngram based = 22
+    test_X.spellcheck_rank = test_X.spellcheck_rank.fillna(23)
     # max 10 embeddings returned
     test_X.embeddings_rank = test_X.embeddings_rank.fillna(11)
     # if cannot calculate cosine similarity, make as dissimilar as possible

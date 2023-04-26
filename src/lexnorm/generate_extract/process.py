@@ -34,10 +34,13 @@ def process_data(
     """
     w2v = word2vec.get_vectors(raw_input + raw_data)
     normalisations = norm_dict.construct(raw_data, norm_data)
-    with open(os.path.join(DATA_PATH, "processed/lexicon.txt"), "rb") as lf:
-        lex = pickle.load(lf)
-    # loading in custom lexicon extremely difficult in hunspell - discuss. Could check in module if suggestions in lex?
-    spellcheck_dict = Dictionary.from_files("en_US")
+    with open(os.path.join(DATA_PATH, "processed/task_lexicon.txt"), "rb") as lf:
+        task_lex = pickle.load(lf)
+    with open(os.path.join(DATA_PATH, "processed/feature_lexicon.txt"), "rb") as lf:
+        feature_lex = pickle.load(lf)
+    spellcheck_dict = Dictionary.from_zip(
+        os.path.join(DATA_PATH, "external/hunspell_en_US.zip")
+    )
     queue = multiprocessing.Queue()
     processes = []
     output = pd.DataFrame()
@@ -50,7 +53,8 @@ def process_data(
                 raw_input[i * batch_size : (i + 1) * batch_size],
                 w2v,
                 normalisations,
-                lex,
+                task_lex,
+                feature_lex,
                 spellcheck_dict,
                 queue,
                 i,
@@ -72,16 +76,8 @@ def process_data(
 
 def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
     """
-    Adds ngram features to a dataframe, namely unigram probabilities of candidate and bigram probabilities of previous
-    and next word given candidate.
-
-    Issue: unseen unigrams in the test set. This is presumed quite unlikely as the models are so large, but still
-    requires thought. Hacky solution done by VDG is to give unseen unigrams a frequency of 1 - bigrams freqs will
-    obviously still be 0 so this only affects unigram probs (frequencies).
-    TODO: investigate the frequency of this in the data.
-    TODO: may have to parallelise this.
-
-    Not doing bigram smoothing as run into size of vocabulary issue if doing laplacian smoothing - no predefined size.
+    Adds ngram features to a dataframe, namely unigram probabilities of candidate and bigram probabilities candidate given
+    previous and next word.
 
     :param output_path: Output path for updated dataframe, if desired
     :param dataframe: Dataframe to add ngram features to
@@ -101,33 +97,50 @@ def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
         os.path.join(ngram_counter_path, "wiki_bigram_counter.pickle")
     )
     dataframe["twitter_uni"] = dataframe.index.map(
-        lambda x: twitter_unigram_counter.get(x, 1)
+        lambda x: twitter_unigram_counter.get(x, 0)
     )
     # next_uni = dataframe.apply(lambda x: twitter_unigram_counter.get(x.next, 1), axis=1)
     dataframe["twitter_bi_prev"] = dataframe.apply(
         lambda x: twitter_bigram_counter.get(" ".join([x.prev, x.name]), 0)
-        / x.twitter_uni,
+        / twitter_unigram_counter.get(x.prev, 1),
         axis=1,
     )
     dataframe["twitter_bi_next"] = dataframe.apply(
         lambda x: twitter_bigram_counter.get(" ".join([x.name, x.next]), 0)
-        / x.twitter_uni,
+        / x.twitter_unigram_counter.get(x.next, 1),
         axis=1,
     )
     # dataframe["twitter_bi_next"] /= next_uni
     dataframe["wiki_uni"] = dataframe.index.map(
-        lambda x: wiki_unigram_counter.get(x, 1)
+        lambda x: wiki_unigram_counter.get(x, 0)
     )
     # next_uni = dataframe.apply(lambda x: wiki_unigram_counter.get(x.next, 1), axis=1)
     dataframe["wiki_bi_prev"] = dataframe.apply(
-        lambda x: wiki_bigram_counter.get(" ".join([x.prev, x.name]), 0) / x.wiki_uni,
+        lambda x: wiki_bigram_counter.get(" ".join([x.prev, x.name]), 0)
+        / wiki_unigram_counter.get(x.prev, 1),
         axis=1,
     )
     dataframe["wiki_bi_next"] = dataframe.apply(
-        lambda x: wiki_bigram_counter.get(" ".join([x.name, x.next]), 0) / x.wiki_uni,
+        lambda x: wiki_bigram_counter.get(" ".join([x.name, x.next]), 0)
+        / wiki_unigram_counter.get(x.next, 1),
         axis=1,
     )
     # dataframe["wiki_bi_next"] /= next_uni
+    for feature in [
+        "twitter_uni",
+        "twitter_bi_prev",
+        "twitter_bi_next",
+        "wiki_uni",
+        "wiki_bi_prev",
+        "wiki_bi_next",
+    ]:
+        dataframe[f"orig_{feature}"] = dataframe.apply(
+            lambda x: dataframe.loc[
+                (dataframe.process == x.process)
+                & (dataframe.tweet == x.tweet)
+                & (dataframe.tok == x.tok)
+            ].loc[x.raw][feature]
+        )
     if output_path is not None:
         with open(output_path, "w") as f:
             dataframe.to_csv(f)
@@ -230,13 +243,18 @@ def process(train_path, test_path, train_output_path, test_output_path):
 
 
 if __name__ == "__main__":
+    process_data_file(
+        os.path.join(DATA_PATH, "raw/dev.norm"),
+        os.path.join(DATA_PATH, "raw/train.norm"),
+        os.path.join(DATA_PATH, "hpc/fixed_dev.norm"),
+    )
     # process(
     #     os.path.join(DATA_PATH, "raw/train.norm"),
     #     os.path.join(DATA_PATH, "raw/dev.norm"),
     #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
     #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
     # )
-    process_cv(
-        os.path.join(DATA_PATH, "processed/combined.txt"),
-        os.path.join(DATA_PATH, "hpc/cv"),
-    )
+    # process_cv(
+    #     os.path.join(DATA_PATH, "processed/combined.txt"),
+    #     os.path.join(DATA_PATH, "hpc/cv"),
+    # )

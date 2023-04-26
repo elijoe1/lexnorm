@@ -1,5 +1,7 @@
 import pandas as pd
 
+from spylls.hunspell.algo.ngram_suggest import precise_affix_score
+
 from lexnorm.generate_extract.filtering import is_eligible
 
 
@@ -12,31 +14,26 @@ def original_token(tok):
 
 
 def spellcheck(tok, dictionary):
-    # TODO: essentially no control over details e.g. limits to different types of suggestions.
-    #   in addition, loading in custom lexicon basically infeasible as bizarre format required
     # From Monoise
-    # Don't need from_spellcheck feature as this is collinear with spellcheck_rank
-    candidates = pd.DataFrame(columns=["spellcheck_rank"])
-    # So we can use 0 to fill NaNs, as otherwise the top ranked word would be indistinguishable - big issue!
-    rank = 1
+    candidates = pd.DataFrame(columns=["from_spellcheck", "spellcheck_score"])
     for c in dictionary.suggest(tok):
-        # Previously, checked if c.islower() before using.
-        # I think it makes more sense to generate all suggestions.
-        # Obviously we have lost some information from the input being lowercase, but we can't do anything about that.
+        # Checks if c.islower() before using - capitalised candidates cause issues with merging dataframe rows
         # Check for ineligible suggestions as these are never the correct normalisation
-        # Testing with lowercase only again:
-        if is_eligible(c) and c.islower():
-            candidates.loc[c] = {"spellcheck_rank": rank}
-            rank += 1
+        if is_eligible(c) and c.islower() and c != tok:
+            candidates.loc[c] = {
+                "from_spellcheck": 1,
+                "spellcheck_score": precise_affix_score(
+                    c, tok, -10, base=0, has_phonetic=False
+                ),
+            }
     return candidates
 
 
 def split(tok, lex):
     # From Monoise
     # Hypothesise split at every position and check if both words are in lexicon.
-    # TODO: currently doesn't hypothesise for lengths <= 3 - explore? Allow more than one split?
     candidates = pd.DataFrame(columns=["from_split"])
-    if len(tok) < 3:
+    if len(tok) <= 3:
         return candidates
     for pos in range(1, len(tok)):
         left = tok[:pos]
@@ -49,10 +46,8 @@ def split(tok, lex):
 def clipping(tok, lex):
     # From Monoise
     # Gives all words in lexicon that have tok as a prefix.
-    # TODO: currently only considers for length >= 2. Can produce huge amount of candidates - increase threshold? Prune?
-    # TODO: reverse direction? To capture repetition of last character for emphasis and so on.
     candidates = pd.DataFrame(columns=["from_clipping"])
-    if len(tok) < 2:
+    if len(tok) <= 2:
         return candidates
     for c in lex:
         if c.startswith(tok) and c != tok:
@@ -60,42 +55,39 @@ def clipping(tok, lex):
     return candidates
 
 
-def norm_lookup(tok, normalisations):
-    # TODO: make use of external normalisation dictionaries?
+def norm_lookup(tok, dict):
     # From Monoise
     # Gives everything raw token seen to normalise to.
     # Don't need from_lookup as this is collinear with norms_seen
-    candidates = pd.DataFrame(columns=["norms_seen"])
-    for k, v in normalisations.get(tok, {}).items():
-        candidates.loc[k] = {"norms_seen": v}
+    candidates = pd.DataFrame(columns=["norms_seen", "frac_norms_seen"])
+    normalisations = dict.get(tok, {}).items()
+    total = sum([v for k, v in normalisations])
+    for k, v in normalisations:
+        candidates.loc[k] = {"norms_seen": v, "frac_norms_seen": v / total}
     return candidates
 
 
-def word_embeddings(tok, vectors, threshold=0):
-    # TODO could reimplement word2vec with keras. Experiment if replacing with new embeddings is worth the extra cost.
-    #  Could even create twitter embeddings from scratch? Would clean data as VDG did before creating embeddings.
-    #  Cosine similarity threshold? Perhaps until below threshold or after 10 candidates, whatever is later.
+def word_embeddings(tok, vectors, lex, threshold=0):
     # From Monoise
     # Issue: lower cased query means embeddings only found for lowercase word!
     # Issue: antonyms also often present in same contexts.
     # Using Twitter embeddings from van der Goot - based on distributional hypothesis to find tokens with similar semantics.
-    # Don't need from_word_embeddings as collinear with embeddings_rank
-    candidates = pd.DataFrame(columns=["cosine_to_orig", "embeddings_rank"])
+    candidates = pd.DataFrame(columns=["from_embeddings", "cosine_to_orig"])
     cand_dict = {}
     if tok in vectors:
-        # Previously checked if c was lower before including. But I think it's better to generate all and make lowercase
-        # if predicted
-        rank = 1
         for c in vectors.similar_by_vector(tok, topn=10):
             # This check is needed as can produce ineligible suggestions
             # Trying lowercase only again:
-            if is_eligible(c[0]) and c[1] >= threshold and c[0].islower():
+            if (
+                is_eligible(c[0])
+                and c[1] >= threshold
+                and c[0].islower()
+                and c[0] in lex
+            ):
                 cand_dict[c[0]] = {
+                    "from_embeddings": 1,
                     "cosine_to_orig": c[1],
-                    # So that 0 can be used to fill NaN values. This may be unnecessary as cosine similarity is already being used as a feature.
-                    "embeddings_rank": rank,
                 }
-                rank += 1
     for cand, features in cand_dict.items():
         candidates.loc[cand] = features
     return candidates
