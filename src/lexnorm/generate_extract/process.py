@@ -15,6 +15,7 @@ from lexnorm.data.word_ngrams import counter_from_pickle
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.candidate_generation import candidates_from_tweets
 from lexnorm.generate_extract.filtering import is_eligible
+from lexnorm.models.normalise import load_candidates
 
 
 def process_data_file(
@@ -243,11 +244,11 @@ def process(train_path, test_path, train_output_path, test_output_path):
 
 
 if __name__ == "__main__":
-    process_data_file(
-        os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
-    )
+    # process_data_file(
+    #     os.path.join(DATA_PATH, "raw/train.norm"),
+    #     os.path.join(DATA_PATH, "raw/train.norm"),
+    #     os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
+    # )
     # process(
     #     os.path.join(DATA_PATH, "raw/train.norm"),
     #     os.path.join(DATA_PATH, "raw/dev.norm"),
@@ -258,3 +259,9 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
+    c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_dev.norm"))
+    add_ngram_features(
+        c,
+        ngram_counter_path=os.path.join(DATA_PATH, "processed"),
+        output_path=os.path.join(DATA_PATH, "hpc/fixed_dev_ngrams.norm"),
+    )

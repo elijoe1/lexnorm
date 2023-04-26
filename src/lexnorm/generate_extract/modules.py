@@ -39,7 +39,9 @@ def split(tok, lex):
         left = tok[:pos]
         right = tok[pos:]
         if left in lex and right in lex:
-            candidates.loc[" ".join([left, right])] = {"from_split": 1}
+            join = " ".join([left, right])
+            if is_eligible(join):
+                candidates.loc[join] = {"from_split": 1}
     return candidates
 
 
@@ -50,7 +52,7 @@ def clipping(tok, lex):
     if len(tok) <= 2:
         return candidates
     for c in lex:
-        if c.startswith(tok) and c != tok:
+        if is_eligible(c) and c.startswith(tok) and c != tok:
             candidates.loc[c] = {"from_clipping": 1}
     return candidates
 

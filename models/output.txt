@@ -2,7 +2,7 @@
 bruh	brother
 get	get
 out	out
-yo	your
+yo	you
 feelings	feelings
 lol	lol
 
@@ -1395,7 +1395,7 @@ centre	centre
 @byxns	@byxns
 @exokkkai	@exokkkai
 @kyugngsoo	@kyugngsoo
-nah	no
+nah	nah
 you	you
 too	too
 !	!
@@ -1531,7 +1531,7 @@ wtf	wtf
 always	always
 had	had
 a	a
-thang	thang
+thang	thing
 for	for
 them	them
 hood	hood
@@ -1994,7 +1994,7 @@ me	me
 there's	there's
 a	a
 mini	mini
-shoutout	shoutout
+shoutout	shout out
 to	to
 you	you
 in	in
@@ -2020,7 +2020,7 @@ going	going
 back	back
 to	to
 homestay	homestay
-d	d
+d	the
 ..	..
 
 rt	rt
@@ -2392,7 +2392,7 @@ kit	kit
 http://t.co/jhynv4feci	http://t.co/jhynv4feci
 
 1st	1st
-thang	thang
+thang	thing
 1st	1st
 you	you
 gotta	gotta
@@ -2434,7 +2434,7 @@ a	a
 good	good
 sence	sence
 of	of
-humour	humour
+humour	humor
 and	and
 enjoy	enjoy
 his	his
@@ -2704,11 +2704,11 @@ rt	rt
 :	:
 i'm	i'm
 a	a
-dogg	dogg
+dogg	dog
 .	.
 she	she
 a	a
-dogg	dogg
+dogg	dog
 too	too
 .	.
 
@@ -2910,7 +2910,7 @@ robert	robert
 hemmings	hemmings
 .	.
 why	why
-wont	wont
+wont	won't
 u	you
 follow	follow
 me	me
@@ -3005,7 +3005,7 @@ liverpool	liverpool
 so	so
 i	i
 can	can
-b	be
+b	b
 away	away
 like	like
 ?	?
@@ -3318,7 +3318,7 @@ vuldemurt	vuldemurt
 out	out
 lowd	lowd
 cuz	because
-ur	you're
+ur	your
 an	an
 sassy	sassy
 wezird	wezird
@@ -3453,7 +3453,7 @@ rt	rt
 gusto	gusto
 mo	mo
 ng	ng
-shoutout	shoutout
+shoutout	shout out
 &	&
 followback	follow back
 ?	?
@@ -3530,7 +3530,7 @@ filmed	filmed
 by	by
 me	me
 don	don
-d	d
+d	the
 x	x
 big	big
 o	o
@@ -3836,7 +3836,7 @@ rt	rt
 @_amariw	@_amariw
 who	who
 at	at
-yo	your
+yo	you
 house	house
 
 #gta	#gta
@@ -4005,7 +4005,7 @@ haha	haha
 you	you
 also	also
 okay	okay
-ma	ma
+ma	my
 still	still
 step	step
 smoking	smoking
@@ -4329,7 +4329,7 @@ http://t.co/4ddeysqow0	http://t.co/4ddeysqow0
 fav	favorite
 this	this
 and	and
-ill	ill
+ill	i'll
 indirect	indirect
 you	you
 but	but
@@ -5220,7 +5220,7 @@ girl	girl
 @yusufrasheedat1	@yusufrasheedat1
 hapi	hapi
 birthday	birthday
-2	to
+2	2
 my	my
 lovely	lovely
 angel	angel
@@ -5234,7 +5234,7 @@ life	life
 nd	and
 prosperity	prosperity
 ........	........
-nd	nd
+nd	and
 wish	wish
 u	you
 all	all
@@ -5512,7 +5512,7 @@ http://t.co/egal16elej	http://t.co/egal16elej
 t	t
 :	:
 viafo_share_twitter	viafo_share_twitter
-r	r
+r	are
 :	:
 4888759250190336	4888759250190336
 2014-05-26t	2014-05-26t
@@ -6379,7 +6379,7 @@ wuddup	what's up
 
 @chaos	@chaos
 ahh	ahh
-ofc	ofc
+ofc	of course
 bbo	bbo
 !!	!!
 i'll	i'll
@@ -6470,7 +6470,7 @@ it	it
 
 @harleyhorcrux	@harleyhorcrux
 boys	boys
-r	r
+r	are
 fuckin	fucking
 idiots	idiots
 forever	forever
@@ -6584,7 +6584,7 @@ meth	meth
 @kmcdonald19	@kmcdonald19
 no	no
 lol	lol
-d	d
+d	the
 wade	wade
 is	is
 my	my
@@ -7129,7 +7129,7 @@ sing	sing
 dnt	don't
 even	even
 knw	know
-d	d
+d	the
 song	song
 "	"
 are	are
@@ -7198,7 +7198,7 @@ http://t.co/mufo0cdedp	http://t.co/mufo0cdedp
 @susiethegoon	@susiethegoon
 :	:
 hahahah	hahahah
-ya	ya
+ya	you
 im	i'm
 not	not
 a	a
@@ -7363,7 +7363,7 @@ geoff	geoff
 #skysports	#skysports
 
 @bkcarter	@bkcarter
-ya	ya
+ya	you
 moms	moms
 was	was
 sweatin	sweatin
@@ -7426,7 +7426,7 @@ back	back
 accounts	accounts
 that	that
 i	i
-wont	wont
+wont	won't
 speak	speak
 to	to
 ,	,
@@ -7728,7 +7728,7 @@ line	line
 with	with
 boyle/dorsett	boyle/dorsett
 ,	,
-d	d
+d	the
 .	.
 moore	moore
 centering	centering
@@ -8138,7 +8138,7 @@ o	o
 l	l
 
 @tortuga_xi	@tortuga_xi
-yh	yh
+yh	yeah
 but	but
 there	there
 are	are
@@ -8708,7 +8708,7 @@ with	with
 people	people
 still	still
 obsessed	obsessed
-w	with
+w	w
 their	their
 exs	exs
 
@@ -9376,7 +9376,7 @@ just	just
 waitin	waitin
 for	for
 you	you
-b	be
+b	b
 
 gettin	getting
 real	real
@@ -9572,7 +9572,7 @@ x5	x5
 segar	segar
 mata	mata
 aku	aku
-dey	dey
+dey	they
 why	why
 icant	icant
 do	do
@@ -9594,7 +9594,7 @@ harrystyles	harrystyles
 http://t.co/xdupsttiot	http://t.co/xdupsttiot
 
 @tommarinellitv	@tommarinellitv
-mah	mah
+mah	my
 brotha	brotha
 !	!
 dottie's	dottie's
@@ -9616,7 +9616,7 @@ youngin	youngin
 kesip	kesip
 qm	qm
 juudh	juudh
-ma	ma
+ma	my
 q	q
 :(	:(
 
@@ -9631,7 +9631,7 @@ v	v
 expect	expect
 zee	zee
 to	to
-b	be
+b	b
 fair	fair
 when	when
 its	its
