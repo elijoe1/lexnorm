@@ -244,9 +244,9 @@ def process(train_path, test_path, train_output_path, test_output_path):
 
 if __name__ == "__main__":
     process_data_file(
-        os.path.join(DATA_PATH, "raw/dev.norm"),
         os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "hpc/fixed_dev.norm"),
+        os.path.join(DATA_PATH, "raw/train.norm"),
+        os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
     )
     # process(
     #     os.path.join(DATA_PATH, "raw/train.norm"),
