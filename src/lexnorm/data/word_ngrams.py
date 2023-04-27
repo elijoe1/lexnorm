@@ -44,10 +44,10 @@ if __name__ == "__main__":
         os.path.join(DATA_PATH, "interim/twitter_ngrams.1"),
         os.path.join(DATA_PATH, "processed/twitter_unigrams.ngr"),
     )
-    # tsv_to_csv(
-    #     os.path.join(DATA_PATH, "interim/twitter_ngrams.2"),
-    #     os.path.join(DATA_PATH, "processed/twitter_bigrams.ngr"),
-    # )
+    tsv_to_csv(
+        os.path.join(DATA_PATH, "interim/twitter_ngrams.2"),
+        os.path.join(DATA_PATH, "processed/twitter_bigrams.ngr"),
+    )
     tsv_to_csv(
         os.path.join(DATA_PATH, "interim/wiki_ngrams.1"),
         os.path.join(DATA_PATH, "processed/wiki_unigrams.ngr"),

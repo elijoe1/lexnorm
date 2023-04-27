@@ -15,6 +15,7 @@ from lexnorm.data.word_ngrams import add_ngram_chunks
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.candidate_generation import candidates_from_tweets
 from lexnorm.generate_extract.filtering import is_eligible
+from lexnorm.models.normalise import load_candidates
 
 
 def process_data_file(
@@ -140,7 +141,7 @@ def add_ngram_orig_features(
         on=["process", "tweet", "tok"],
         suffixes=(None, "_orig"),
     )
-    dataframe = dataframe.set_index(dataframe["cand"])
+    dataframe = dataframe.set_index("cand")
     if output_path is not None:
         with open(output_path, "w") as f:
             dataframe.to_csv(f)
@@ -249,22 +250,23 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
     # )
     process_train_test(
-        os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "raw/dev.norm"),
-        os.path.join(DATA_PATH, "hpc/train_final.cands"),
-        os.path.join(DATA_PATH, "hpc/dev_final.cands"),
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "raw/test.norm"),
+        os.path.join(DATA_PATH, "hpc/combined.cands"),
+        os.path.join(DATA_PATH, "hpc/test.cands"),
     )
     # process_cv(
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
-    # c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_dev.norm"))
-    # add_ngram_orig_features(
-    #     c,
-    #     output_path=os.path.join(DATA_PATH, "hpc/fixed_dev_ngrams.norm"),
+    # c = load_candidates(os.path.join(DATA_PATH, "hpc/train_final.cands"))
+    # c = c.set_index("cand.1")
+    # c.to_csv(os.path.join(DATA_PATH, "hpc/train_final.cands"))
+    # create_index(
+    #     c, output_path=os.path.join(DATA_PATH, "hpc/fixed_dev_ngrams_idx.norm")
     # )
-    # c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_train.norm"))
-    # add_ngram_orig_features(
+    # c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_train_ngrams.norm"))
+    # create_index(
     #     c,
-    #     output_path=os.path.join(DATA_PATH, "hpc/fixed_train_ngrams.norm"),
+    #     output_path=os.path.join(DATA_PATH, "hpc/fixed_train_ngrams_idx.norm"),
     # )
