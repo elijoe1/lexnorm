@@ -1,9 +1,11 @@
 import os
 
+import joblib
 import numpy as np
 from joblib import dump, load
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.model_selection import KFold
+from sklearn.tree import DecisionTreeClassifier
 
 from lexnorm.data.baseline import mfr
 from lexnorm.data.normEval import loadNormData
@@ -23,7 +25,7 @@ def train_rf(candidates, random_state=None, output_path=None):
         random_state=random_state,
         verbose=1,
         # class_weight="balanced",
-        oob_score=True,
+        # oob_score=True,
         # suggested by scikit docs as good to prevent over-fitting (seems to work a little...?)
         # pre-pruning
         min_samples_leaf=5
@@ -33,6 +35,7 @@ def train_rf(candidates, random_state=None, output_path=None):
         # max_depth=3,
     )
     rf_clf.fit(train_X, train_y)
+    # print(rf_clf.cost_complexity_pruning_path(train_X, train_y))
     if output_path is not None:
         dump(rf_clf, output_path)
     return rf_clf
@@ -200,13 +203,22 @@ if __name__ == "__main__":
         os.path.join(DATA_PATH, "../models/rf.joblib"),
         os.path.join(DATA_PATH, "raw/train.norm"),
         os.path.join(DATA_PATH, "raw/dev.norm"),
-        os.path.join(DATA_PATH, "hpc/fixed_train_idx.norm"),
-        os.path.join(DATA_PATH, "hpc/fixed_dev_idx.norm"),
+        os.path.join(DATA_PATH, "hpc/train_final.cands"),
+        os.path.join(DATA_PATH, "hpc/dev_final.cands"),
         os.path.join(DATA_PATH, "../models/output.txt"),
         train_first=True,
         # drop_features="cosine_to_orig",
         # with_mfr=True,
     )
+    # with open(os.path.join(DATA_PATH, "../models/rf.joblib"), "rb") as f:
+    #     rf = joblib.load(f)
+    # train_df = load_candidates(
+    #     os.path.join(DATA_PATH, "hpc/fixed_train_idx.norm"),
+    #     random_state=0,
+    #     shuffle=True,
+    # )
+    # train_X, train_y = prep_train(train_df)
+    # rf.cost_complexity_pruning_path(train_X, train_y)
     # train_predict_evaluate_cv(
     #     os.path.join(DATA_PATH, "../models"),
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
