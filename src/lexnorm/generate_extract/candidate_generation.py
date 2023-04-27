@@ -17,7 +17,6 @@ def candidates_from_tweets(
     task_lexicon: set,
     feature_lexicon: set,
     spellcheck_dictionary: spylls.hunspell.Dictionary,
-    queue: multiprocessing.Queue,
     process: int,
     gold: Optional[list[list[str]]],
 ) -> None:
@@ -34,7 +33,6 @@ def candidates_from_tweets(
     :param task_lexicon: lexicon for limiting generated candidates
     :param feature_lexicon: lexicon for orig_in_feature_lex feature
     :param spellcheck_dictionary: for the spellcheck module
-    :param queue: to output dataframe into in a safe manner
     :param process: process number for token identification
     :param gold: normalised tweets for annotation, if annotated training data is desired
     """
@@ -69,7 +67,7 @@ def candidates_from_tweets(
             tok_index += 1
             all_candidates = pd.concat([all_candidates, candidates])
         tweet_index += 1
-    queue.put(all_candidates)
+    return all_candidates
 
 
 def candidates_from_token(
