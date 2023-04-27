@@ -1,47 +1,45 @@
 import os
-import pickle
-from collections import Counter
+
+import pandas as pd
 
 from lexnorm.definitions import DATA_PATH
 
 
-def tsv_to_pickle(ngram_path, output_path):
-    ngrams = Counter()
+def tsv_to_csv(ngram_path, output_path):
     with open(ngram_path) as f:
-        for line in f:
-            ngram = line.strip().split("\t")
-            if len(ngram) != 2:
-                continue
-            # merge all cased versions of token as everything is lower-cased in our system - no other way to do this?
-            ngrams.update({ngram[0].lower(): int(ngram[1])})
-    with open(output_path, "wb") as f:
-        pickle.dump(ngrams, f)
+        ngrams = pd.read_csv(
+            f,
+            sep="\t",
+            index_col=0,
+            names=["frequency"],
+            na_values="",
+            keep_default_na=False,
+        )
+    lowercase = ngrams.groupby(ngrams.index.str.lower()).sum()
+    with open(output_path, "w") as f:
+        lowercase.to_csv(f)
 
 
-def counter_from_pickle(counter_path):
-    with open(counter_path, "rb") as f:
-        counter = pickle.load(f)
-    return counter
+def ngram_from_csv(df_path):
+    with open(df_path, "r") as f:
+        df = pd.read_csv(f, index_col=0, na_values="", keep_default_na=False)
+    return df
 
 
 if __name__ == "__main__":
-    tsv_to_pickle(
-        os.path.join(DATA_PATH, "interim/twitter_ngrams.1"),
-        os.path.join(DATA_PATH, "processed/twitter_unigram_counter.pickle"),
-    )
-    tsv_to_pickle(
-        os.path.join(DATA_PATH, "interim/twitter_ngrams.2"),
-        os.path.join(DATA_PATH, "processed/twitter_bigram_counter.pickle"),
-    )
-    tsv_to_pickle(
-        os.path.join(DATA_PATH, "interim/wiki_ngrams.1"),
-        os.path.join(DATA_PATH, "processed/wiki_unigram_counter.pickle"),
-    )
-    tsv_to_pickle(
-        os.path.join(DATA_PATH, "interim/wiki_ngrams.2"),
-        os.path.join(DATA_PATH, "processed/wiki_bigram_counter.pickle"),
-    )
-    # counter = counter_from_pickle(
-    #     os.path.join(DATA_PATH, "processed/wiki_bigram_counter.pickle")
+    # tsv_to_csv(
+    #     os.path.join(DATA_PATH, "interim/twitter_ngrams.1"),
+    #     os.path.join(DATA_PATH, "processed/twitter_unigrams.ngr"),
     # )
-    # print(counter.most_common(40))
+    tsv_to_csv(
+        os.path.join(DATA_PATH, "interim/twitter_ngrams.2"),
+        os.path.join(DATA_PATH, "processed/twitter_bigrams.ngr"),
+    )
+    # tsv_to_csv(
+    #     os.path.join(DATA_PATH, "interim/wiki_ngrams.1"),
+    #     os.path.join(DATA_PATH, "processed/wiki_unigrams.ngr"),
+    # )
+    # tsv_to_csv(
+    #     os.path.join(DATA_PATH, "interim/wiki_ngrams.2"),
+    #     os.path.join(DATA_PATH, "processed/wiki_bigrams.ngr"),
+    # )

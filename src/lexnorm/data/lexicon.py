@@ -211,7 +211,7 @@ if __name__ == "__main__":
         True,
         False,
     )
-    with open(os.path.join(DATA_PATH, "processed/task_lexicon.txt"), "wb") as f:
+    with open(os.path.join(DATA_PATH, "processed/task_lexicon.pickle"), "wb") as f:
         pickle.dump(lex, f)
     lex = build(
         {"english", "american"},
@@ -222,7 +222,7 @@ if __name__ == "__main__":
         True,
     )
     lex = refine(lex.union(build_interjections()))
-    with open(os.path.join(DATA_PATH, "processed/feature_lexicon.txt"), "wb") as f:
+    with open(os.path.join(DATA_PATH, "processed/feature_lexicon.pickle"), "wb") as f:
         pickle.dump(lex, f)
     # with open(os.path.join(DATA_PATH, "processed/feature_lexicon.txt"), "rb") as f:
     #     lex = pickle.load(f)
