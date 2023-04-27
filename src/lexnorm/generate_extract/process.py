@@ -49,7 +49,7 @@ def process_data(
     gold = True if raw_input == raw_data else False
     for i in range(cores):
         p = Process(
-            target=process_tweets,
+            target=candidates_from_tweets,
             args=(
                 raw_input[i * batch_size : (i + 1) * batch_size],
                 w2v,
@@ -75,20 +75,7 @@ def process_data(
     return output
 
 
-def process_tweets(
-    raw, vectors, norms, task_lex, feature_lex, spellcheck_dict, queue, i, norm
-):
-    df = add_ngram_features(
-        candidates_from_tweets(
-            raw, vectors, norms, task_lex, feature_lex, spellcheck_dict, i, norm
-        ),
-    )
-    queue.put(df)
-
-
-def add_ngram_features(
-    dataframe, ngram_counter_path=os.path.join(DATA_PATH, "processed"), output_path=None
-):
+def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
     """
     Adds ngram features to a dataframe, namely unigram probabilities of candidate and bigram probabilities candidate given
     previous and next word.
@@ -210,7 +197,6 @@ def link_to_gold(dataframe, raw_gold, norm_gold, output_path=None):
 
 
 def process_cv(data_path, output_dir):
-    # TODO: no need to add ngrams explicitly
     raw, norm = loadNormData(data_path)
     raw = np.array(raw, dtype=object)
     norm = np.array(norm, dtype=object)
@@ -234,7 +220,6 @@ def process_cv(data_path, output_dir):
 
 
 def process(train_path, test_path, train_output_path, test_output_path):
-    # TODO: no need to add ngrams explicitly
     create_index(
         add_ngram_features(
             process_data_file(
@@ -258,11 +243,11 @@ def process(train_path, test_path, train_output_path, test_output_path):
 
 
 if __name__ == "__main__":
-    process_data_file(
-        os.path.join(DATA_PATH, "raw/dev.norm"),
-        os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
-    )
+    # process_data_file(
+    #     os.path.join(DATA_PATH, "raw/train.norm"),
+    #     os.path.join(DATA_PATH, "raw/train.norm"),
+    #     os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
+    # )
     # process(
     #     os.path.join(DATA_PATH, "raw/train.norm"),
     #     os.path.join(DATA_PATH, "raw/dev.norm"),
@@ -273,3 +258,9 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
+    c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_train.norm"))
+    add_ngram_features(
+        c,
+        ngram_counter_path=os.path.join(DATA_PATH, "processed"),
+        output_path=os.path.join(DATA_PATH, "hpc/fixed_train_ngrams.norm"),
+    )
