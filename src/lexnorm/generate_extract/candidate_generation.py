@@ -109,9 +109,6 @@ def candidates_from_token(
     candidates["same_order"] = candidates.index.map(
         lambda x: 1 if is_subseq(orig, x) else np.nan
     )
-    # Copy features of original word to each candidate as decision whether to normalize based solely upon the original word.
-    for feature in ["norms_seen", "frac_norms_seen", "length"]:
-        candidates[f"orig_{feature}"] = candidates.loc[orig][feature]
-    candidates["orig_in_feature_lex"] = 1 if orig in feature_lexicon else 0
+    candidates["in_feature_lex_orig"] = 1 if orig in feature_lexicon else 0
 
     return candidates

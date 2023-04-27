@@ -11,11 +11,10 @@ from spylls.hunspell import Dictionary
 
 from lexnorm.data import normEval, word2vec, norm_dict
 from lexnorm.data.normEval import loadNormData
-from lexnorm.data.word_ngrams import counter_from_pickle
+from lexnorm.data.word_ngrams import add_ngram_chunks
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.candidate_generation import candidates_from_tweets
 from lexnorm.generate_extract.filtering import is_eligible
-from lexnorm.models.normalise import load_candidates
 
 
 def process_data_file(
@@ -75,7 +74,7 @@ def process_data(
     return output
 
 
-def add_ngram_features(
+def add_ngram_orig_features(
     dataframe, ngram_counter_path=os.path.join(DATA_PATH, "processed"), output_path=None
 ):
     """
@@ -84,65 +83,64 @@ def add_ngram_features(
 
     :param output_path: Output path for updated dataframe, if desired
     :param dataframe: Dataframe to add ngram features to
-    :param ngram_counter_path: Path to pickles of ngram counters
+    :param ngram_counter_path: Path to csvs of ngram dataframes
     """
-    dataframe = dataframe.copy()
-    twitter_unigram_counter = counter_from_pickle(
-        os.path.join(ngram_counter_path, "twitter_unigram_counter.pickle")
+    dataframe = dataframe.copy().reset_index(names="cand")
+    for domain in ["wiki", "twitter"]:
+        for tok_pos in ["cand", "prev", "next"]:
+            dataframe = dataframe.set_index(dataframe[tok_pos], drop=False)
+            dataframe = add_ngram_chunks(
+                dataframe,
+                os.path.join(ngram_counter_path, f"{domain}_unigrams.ngr"),
+                f"{domain}_uni_{tok_pos}",
+                True,
+            )
+    for domain in ["wiki", "twitter"]:
+        for tok_poss in [("prev", "cand"), ("cand", "next")]:
+            dataframe = dataframe.set_index(
+                dataframe[tok_poss[0]] + " " + dataframe[tok_poss[1]], drop=False
+            )
+            dataframe = add_ngram_chunks(
+                dataframe,
+                os.path.join(ngram_counter_path, f"{domain}_bigrams.ngr"),
+                f"{domain}_bi_{tok_poss[0]}_{tok_poss[1]}",
+                True,
+            )
+    for domain in ["wiki", "twitter"]:
+        total = dataframe[f"{domain}_uni_cand"].sum()
+        dataframe[f"{domain}_bi_prev_cand"] /= dataframe[f"{domain}_uni_prev"]
+        dataframe[f"{domain}_bi_cand_next"] /= dataframe[f"{domain}_uni_next"]
+        dataframe[f"{domain}_uni_cand"] /= total
+    dataframe = dataframe.drop(
+        columns=[
+            "wiki_uni_prev",
+            "wiki_uni_next",
+            "twitter_uni_prev",
+            "twitter_uni_next",
+        ]
     )
-    twitter_total = sum(twitter_unigram_counter.values())
-    twitter_bigram_counter = counter_from_pickle(
-        os.path.join(ngram_counter_path, "twitter_bigram_counter.pickle")
+    dataframe = dataframe.merge(
+        dataframe.loc[dataframe.from_original_token == 1][
+            [
+                "twitter_uni_cand",
+                "twitter_bi_prev_cand",
+                "twitter_bi_cand_next",
+                "wiki_uni_cand",
+                "wiki_bi_prev_cand",
+                "wiki_bi_cand_next",
+                "length",
+                "norms_seen",
+                "frac_norms_seen",
+                "process",
+                "tweet",
+                "tok",
+            ]
+        ],
+        "left",
+        on=["process", "tweet", "tok"],
+        suffixes=(None, "_orig"),
     )
-    wiki_unigram_counter = counter_from_pickle(
-        os.path.join(ngram_counter_path, "wiki_unigram_counter.pickle")
-    )
-    wiki_total = sum(wiki_unigram_counter.values())
-    wiki_bigram_counter = counter_from_pickle(
-        os.path.join(ngram_counter_path, "wiki_bigram_counter.pickle")
-    )
-    dataframe["twitter_uni"] = dataframe.index.map(
-        lambda x: twitter_unigram_counter.get(x, 0) / twitter_total
-    )
-    dataframe["twitter_bi_prev"] = dataframe.apply(
-        lambda x: twitter_bigram_counter.get(" ".join([x.prev, x.name]), 0)
-        / twitter_unigram_counter.get(x.prev, 1),
-        axis=1,
-    )
-    dataframe["twitter_bi_next"] = dataframe.apply(
-        lambda x: twitter_bigram_counter.get(" ".join([x.name, x.next]), 0)
-        / twitter_unigram_counter.get(x.next, 1),
-        axis=1,
-    )
-    dataframe["wiki_uni"] = dataframe.index.map(
-        lambda x: wiki_unigram_counter.get(x, 0) / wiki_total
-    )
-    dataframe["wiki_bi_prev"] = dataframe.apply(
-        lambda x: wiki_bigram_counter.get(" ".join([x.prev, x.name]), 0)
-        / wiki_unigram_counter.get(x.prev, 1),
-        axis=1,
-    )
-    dataframe["wiki_bi_next"] = dataframe.apply(
-        lambda x: wiki_bigram_counter.get(" ".join([x.name, x.next]), 0)
-        / wiki_unigram_counter.get(x.next, 1),
-        axis=1,
-    )
-    for feature in [
-        "twitter_uni",
-        "twitter_bi_prev",
-        "twitter_bi_next",
-        "wiki_uni",
-        "wiki_bi_prev",
-        "wiki_bi_next",
-    ]:
-        dataframe[f"orig_{feature}"] = dataframe.apply(
-            lambda x: dataframe.loc[
-                (dataframe.process == x.process)
-                & (dataframe.tweet == x.tweet)
-                & (dataframe.tok == x.tok)
-            ].loc[x.raw][feature],
-            axis=1,
-        )
+    dataframe = dataframe.set_index(dataframe["cand"])
     if output_path is not None:
         with open(output_path, "w") as f:
             dataframe.to_csv(f)
@@ -208,12 +206,12 @@ def process_cv(data_path, output_dir):
         raw_train = raw[train].tolist()
         norm_train = norm[train].tolist()
         raw_test = raw[test].tolist()
-        add_ngram_features(
+        add_ngram_orig_features(
             process_data(raw_train, raw_train, norm_train),
             os.path.join(DATA_PATH, "processed"),
             os.path.join(output_dir, f"train_{i}.txt"),
         )
-        add_ngram_features(
+        add_ngram_orig_features(
             process_data(raw_test, raw_train, norm_train),
             os.path.join(DATA_PATH, "processed"),
             os.path.join(output_dir, f"test_{i}.txt"),
@@ -221,9 +219,9 @@ def process_cv(data_path, output_dir):
         print(f"Completed {i+1}/5")
 
 
-def process(train_path, test_path, train_output_path, test_output_path):
+def process_train_test(train_path, test_path, train_output_path, test_output_path):
     create_index(
-        add_ngram_features(
+        add_ngram_orig_features(
             process_data_file(
                 train_path,
                 train_path,
@@ -233,7 +231,7 @@ def process(train_path, test_path, train_output_path, test_output_path):
         output_path=train_output_path,
     )
     create_index(
-        add_ngram_features(
+        add_ngram_orig_features(
             process_data_file(
                 test_path,
                 train_path,
@@ -250,18 +248,23 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "raw/train.norm"),
     #     os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
     # )
-    # process(
-    #     os.path.join(DATA_PATH, "raw/train.norm"),
-    #     os.path.join(DATA_PATH, "raw/dev.norm"),
-    #     os.path.join(DATA_PATH, "hpc/train_pipeline.txt"),
-    #     os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
-    # )
+    process_train_test(
+        os.path.join(DATA_PATH, "raw/train.norm"),
+        os.path.join(DATA_PATH, "raw/dev.norm"),
+        os.path.join(DATA_PATH, "hpc/train_final.cands"),
+        os.path.join(DATA_PATH, "hpc/dev_final.cands"),
+    )
     # process_cv(
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
-    c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_dev.norm"))
-    add_ngram_features(
-        c,
-        output_path=os.path.join(DATA_PATH, "hpc/fixed_dev_ngrams.norm"),
-    )
+    # c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_dev.norm"))
+    # add_ngram_orig_features(
+    #     c,
+    #     output_path=os.path.join(DATA_PATH, "hpc/fixed_dev_ngrams.norm"),
+    # )
+    # c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_train.norm"))
+    # add_ngram_orig_features(
+    #     c,
+    #     output_path=os.path.join(DATA_PATH, "hpc/fixed_train_ngrams.norm"),
+    # )
