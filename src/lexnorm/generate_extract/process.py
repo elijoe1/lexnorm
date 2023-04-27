@@ -258,9 +258,9 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
-    c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_dev.norm"))
+    c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_train.norm"))
     add_ngram_features(
         c,
         ngram_counter_path=os.path.join(DATA_PATH, "processed"),
-        output_path=os.path.join(DATA_PATH, "hpc/fixed_dev_ngrams.norm"),
+        output_path=os.path.join(DATA_PATH, "hpc/fixed_train_ngrams.norm"),
     )
