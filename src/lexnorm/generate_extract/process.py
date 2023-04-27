@@ -88,19 +88,20 @@ def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
     twitter_unigram_counter = counter_from_pickle(
         os.path.join(ngram_counter_path, "twitter_unigram_counter.pickle")
     )
+    twitter_total = sum(twitter_unigram_counter.values())
     twitter_bigram_counter = counter_from_pickle(
         os.path.join(ngram_counter_path, "twitter_bigram_counter.pickle")
     )
     wiki_unigram_counter = counter_from_pickle(
         os.path.join(ngram_counter_path, "wiki_unigram_counter.pickle")
     )
+    wiki_total = sum(wiki_unigram_counter.values())
     wiki_bigram_counter = counter_from_pickle(
         os.path.join(ngram_counter_path, "wiki_bigram_counter.pickle")
     )
     dataframe["twitter_uni"] = dataframe.index.map(
-        lambda x: twitter_unigram_counter.get(x, 0)
+        lambda x: twitter_unigram_counter.get(x, 0) / twitter_total
     )
-    # next_uni = dataframe.apply(lambda x: twitter_unigram_counter.get(x.next, 1), axis=1)
     dataframe["twitter_bi_prev"] = dataframe.apply(
         lambda x: twitter_bigram_counter.get(" ".join([x.prev, x.name]), 0)
         / twitter_unigram_counter.get(x.prev, 1),
@@ -108,14 +109,12 @@ def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
     )
     dataframe["twitter_bi_next"] = dataframe.apply(
         lambda x: twitter_bigram_counter.get(" ".join([x.name, x.next]), 0)
-        / x.twitter_unigram_counter.get(x.next, 1),
+        / twitter_unigram_counter.get(x.next, 1),
         axis=1,
     )
-    # dataframe["twitter_bi_next"] /= next_uni
     dataframe["wiki_uni"] = dataframe.index.map(
-        lambda x: wiki_unigram_counter.get(x, 0)
+        lambda x: wiki_unigram_counter.get(x, 0) / wiki_total
     )
-    # next_uni = dataframe.apply(lambda x: wiki_unigram_counter.get(x.next, 1), axis=1)
     dataframe["wiki_bi_prev"] = dataframe.apply(
         lambda x: wiki_bigram_counter.get(" ".join([x.prev, x.name]), 0)
         / wiki_unigram_counter.get(x.prev, 1),
@@ -126,7 +125,6 @@ def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
         / wiki_unigram_counter.get(x.next, 1),
         axis=1,
     )
-    # dataframe["wiki_bi_next"] /= next_uni
     for feature in [
         "twitter_uni",
         "twitter_bi_prev",
@@ -140,7 +138,8 @@ def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
                 (dataframe.process == x.process)
                 & (dataframe.tweet == x.tweet)
                 & (dataframe.tok == x.tok)
-            ].loc[x.raw][feature]
+            ].loc[x.raw][feature],
+            axis=1,
         )
     if output_path is not None:
         with open(output_path, "w") as f:
