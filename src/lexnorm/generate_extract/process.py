@@ -75,7 +75,9 @@ def process_data(
     return output
 
 
-def add_ngram_features(dataframe, ngram_counter_path, output_path=None):
+def add_ngram_features(
+    dataframe, ngram_counter_path=os.path.join(DATA_PATH, "processed"), output_path=None
+):
     """
     Adds ngram features to a dataframe, namely unigram probabilities of candidate and bigram probabilities candidate given
     previous and next word.
@@ -258,9 +260,8 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
-    c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_train.norm"))
+    c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_dev.norm"))
     add_ngram_features(
         c,
-        ngram_counter_path=os.path.join(DATA_PATH, "processed"),
-        output_path=os.path.join(DATA_PATH, "hpc/fixed_train_ngrams.norm"),
+        output_path=os.path.join(DATA_PATH, "hpc/fixed_dev_ngrams.norm"),
     )
