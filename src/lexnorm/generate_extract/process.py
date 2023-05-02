@@ -249,16 +249,16 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "raw/train.norm"),
     #     os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
     # )
-    process_train_test(
-        os.path.join(DATA_PATH, "processed/combined.txt"),
-        os.path.join(DATA_PATH, "raw/test.norm"),
-        os.path.join(DATA_PATH, "hpc/combined.cands"),
-        os.path.join(DATA_PATH, "hpc/test.cands"),
-    )
-    # process_cv(
+    # process_train_test(
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
-    #     os.path.join(DATA_PATH, "hpc/cv"),
+    #     os.path.join(DATA_PATH, "raw/test.norm"),
+    #     os.path.join(DATA_PATH, "hpc/combined.cands"),
+    #     os.path.join(DATA_PATH, "hpc/test.cands"),
     # )
+    process_cv(
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "hpc/cv"),
+    )
     # c = load_candidates(os.path.join(DATA_PATH, "hpc/train_final.cands"))
     # c = c.set_index("cand.1")
     # c.to_csv(os.path.join(DATA_PATH, "hpc/train_final.cands"))
