@@ -6,6 +6,7 @@ import os
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.process import create_index, link_to_gold
 from lexnorm.generate_extract.filtering import is_eligible
+from lexnorm.models.classifiers import train_predict_evaluate_cv
 from lexnorm.models.normalise import load_candidates
 from lexnorm.models.predict import predict_probs
 from lexnorm.evaluation.analyse import analyse
@@ -32,9 +33,9 @@ def modules(raw, norm, candidates, verbose=True):
     columns = [
         "from_split",
         "from_clipping",
-        "spellcheck_rank",
+        "from_spellcheck",
         "norms_seen",
-        "embeddings_rank",
+        "from_embeddings",
     ]
     candidates = link_to_gold(candidates, raw, norm)
     num_eligible, num_norms = analyse(raw, norm)
@@ -230,6 +231,53 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=1, norms_only=
     )
 
 
+def feature_ablation(model, output_path):
+    features = [
+        "cosine_to_orig",
+        "frac_norms_seen",
+        "from_clipping",
+        "from_embeddings",
+        "from_original_token",
+        "from_spellcheck",
+        "from_split",
+        "norms_seen",
+        "spellcheck_score",
+        "length",
+        "frac_length",
+        "same_order",
+        "in_feature_lex_orig",
+        "wiki_uni_cand",
+        "twitter_uni_cand",
+        "wiki_bi_prev_cand",
+        "wiki_bi_cand_next",
+        "twitter_bi_prev_cand",
+        "twitter_bi_cand_next",
+        "twitter_uni_cand_orig",
+        "twitter_bi_prev_cand_orig",
+        "twitter_bi_cand_next_orig",
+        "wiki_uni_cand_orig",
+        "wiki_bi_prev_cand_orig",
+        "wiki_bi_cand_next_orig",
+        "length_orig",
+        "norms_seen_orig",
+        "frac_norms_seen_orig",
+    ]
+    scores = {}
+    for feature in features:
+        # TODO do on combined and test
+        scores[feature] = train_predict_evaluate_cv(
+            model,
+            None,
+            os.path.join(DATA_PATH, "processed/combined.txt"),
+            os.path.join(DATA_PATH, "hpc/cv"),
+            None,
+            train_first=True,
+            drop_features=feature,
+        )
+    with open(output_path, "w") as f:
+        f.write(str(scores))
+
+
 def evaluate_cv(model_dir, tweets_path, df_dir):
     raw, norm = loadNormData(tweets_path)
     raw = np.array(raw, dtype=object)
@@ -270,8 +318,8 @@ def evaluate(model_path, tweets_path, df_path):
 if __name__ == "__main__":
     evaluate(
         os.path.join(DATA_PATH, "../models/rf.joblib"),
-        os.path.join(DATA_PATH, "raw/dev.norm"),
-        os.path.join(DATA_PATH, "hpc/dev_pipeline.txt"),
+        os.path.join(DATA_PATH, "raw/test.norm"),
+        os.path.join(DATA_PATH, "hpc/test.cands"),
     )
     # evaluate_cv(
     #     os.path.join(DATA_PATH, "../models"),

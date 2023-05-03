@@ -17,7 +17,6 @@ from lexnorm.models.predict import (
     predict_probs,
     predict_normalisation,
 )
-from lexnorm.models.random_forest import create_rf
 
 
 def train_model(model, candidates, output_path=None):
@@ -139,53 +138,6 @@ def train_predict_evaluate(
         baseline_preds=mfr(train_raw, train_norm, raw) if with_mfr else None,
     )
     return evaluate_predictions(raw, norm, predictions)[2]  # ERR
-
-
-def feature_ablation(model, output_path):
-    features = [
-        "cosine_to_orig",
-        "frac_norms_seen",
-        "from_clipping",
-        "from_embeddings",
-        "from_original_token",
-        "from_spellcheck",
-        "from_split",
-        "norms_seen",
-        "spellcheck_score",
-        "length",
-        "frac_length",
-        "same_order",
-        "in_feature_lex_orig",
-        "wiki_uni_cand",
-        "twitter_uni_cand",
-        "wiki_bi_prev_cand",
-        "wiki_bi_cand_next",
-        "twitter_bi_prev_cand",
-        "twitter_bi_cand_next",
-        "twitter_uni_cand_orig",
-        "twitter_bi_prev_cand_orig",
-        "twitter_bi_cand_next_orig",
-        "wiki_uni_cand_orig",
-        "wiki_bi_prev_cand_orig",
-        "wiki_bi_cand_next_orig",
-        "length_orig",
-        "norms_seen_orig",
-        "frac_norms_seen_orig",
-    ]
-    scores = {}
-    for feature in features:
-        # TODO do on combined and test
-        scores[feature] = train_predict_evaluate_cv(
-            model,
-            None,
-            os.path.join(DATA_PATH, "processed/combined.txt"),
-            os.path.join(DATA_PATH, "hpc/cv"),
-            None,
-            train_first=True,
-            drop_features=feature,
-        )
-    with open(output_path, "w") as f:
-        f.write(str(scores))
 
 
 if __name__ == "__main__":
