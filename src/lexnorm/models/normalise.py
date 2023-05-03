@@ -38,8 +38,6 @@ def prep_train(annotated_dataframe):
         ],
         axis=1,
     ).fillna(0)
-    # imp_mean = SimpleImputer(missing_values=np.nan, strategy="mean")
-    # train_X = imp_mean.fit_transform(train_X)
     train_y = annotated_dataframe.fillna(0)["correct"]
     return train_X, train_y
 
@@ -54,8 +52,6 @@ def prep_test(unannotated_dataframe):
         ],
         axis=1,
     ).fillna(0)
-    # imp_mean = SimpleImputer(missing_values=np.nan, strategy="mean")
-    # test_X = imp_mean.fit_transform(test_X)
     return test_X
 
 

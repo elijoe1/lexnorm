@@ -35,9 +35,9 @@ def process_data(
     """
     w2v = word2vec.get_vectors(raw_input + raw_data)
     normalisations = norm_dict.construct(raw_data, norm_data)
-    with open(os.path.join(DATA_PATH, "processed/task_lexicon.txt"), "rb") as lf:
+    with open(os.path.join(DATA_PATH, "processed/task_lexicon.pickle"), "rb") as lf:
         task_lex = pickle.load(lf)
-    with open(os.path.join(DATA_PATH, "processed/feature_lexicon.txt"), "rb") as lf:
+    with open(os.path.join(DATA_PATH, "processed/feature_lexicon.pickle"), "rb") as lf:
         feature_lex = pickle.load(lf)
     spellcheck_dict = Dictionary.from_zip(
         os.path.join(DATA_PATH, "external/hunspell_en_US.zip")
