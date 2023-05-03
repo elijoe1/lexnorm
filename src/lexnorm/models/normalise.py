@@ -1,9 +1,4 @@
-import numpy as np
 import pandas as pd
-from sklearn.impute import SimpleImputer
-
-from lexnorm.generate_extract.filtering import is_eligible
-from lexnorm.data.baseline import write
 
 
 def load_candidates(candidates_path, random_state=None, shuffle=False):
@@ -53,28 +48,3 @@ def prep_test(unannotated_dataframe):
         axis=1,
     ).fillna(0)
     return test_X
-
-
-def normalise(raw, pred_toks: dict, output_path=None, baseline_preds=None):
-    tok_id = -1
-    pred_tweets = []
-    for j, tweet in enumerate(raw):
-        pred_tweet = []
-        for i, tok in enumerate(tweet):
-            if is_eligible(tok):
-                tok_id += 1
-                pred = pred_toks.get(
-                    tok_id, tok if baseline_preds is None else baseline_preds[j][i]
-                )
-                pred_tweet.append(pred.lower())
-            elif tok == "rt" and 0 < i < len(tweet) - 1 and tweet[i + 1][0] != "@":
-                # hard coded normalisation of 'rt' if followed by @mention following notebook 1.0 and 2015 annotation guideline 3.
-                # we can do this as 'rt' is a domain specific entity and normalisation is fairly deterministic (when in middle
-                # of tweet and not followed by @mention) and when normalised, always to 'retweet'
-                pred_tweet.append("retweet")
-            else:
-                pred_tweet.append(tok)
-        pred_tweets.append(pred_tweet)
-    if output_path is not None:
-        write(raw, pred_tweets, output_path)
-    return pred_tweets

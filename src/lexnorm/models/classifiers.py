@@ -9,10 +9,15 @@ from lexnorm.data.normEval import loadNormData
 from lexnorm.definitions import DATA_PATH
 from lexnorm.evaluation.predictions import evaluate_predictions
 from lexnorm.generate_extract.process import create_index
-from lexnorm.models.linear import create_logreg
+from lexnorm.models.logreg import create_logreg
 
-from lexnorm.models.normalise import prep_train, load_candidates, normalise
-from lexnorm.models.predict import predict_normalisations, predict_probs
+from lexnorm.models.normalise import prep_train, load_candidates
+from lexnorm.models.predict import (
+    predict_candidates,
+    predict_probs,
+    predict_normalisation,
+)
+from lexnorm.models.random_forest import create_rf
 
 
 def train_model(model, candidates, output_path=None):
@@ -77,11 +82,11 @@ def train_predict_evaluate_cv(
             )
         else:
             clf = load(os.path.join(DATA_PATH, model_dir, f"{i}.joblib"))
-        pred_tokens = predict_normalisations(
+        pred_tokens = predict_candidates(
             predict_probs(clf, dev_df),
             threshold=0.5,
         )
-        comb_preds += normalise(
+        comb_preds += predict_normalisation(
             test_raw,
             pred_tokens,
             os.path.join(DATA_PATH, output_dir, f"output_{i}.txt")
@@ -89,7 +94,9 @@ def train_predict_evaluate_cv(
             else None,
             baseline_preds=mfr(train_raw, train_norm, test_raw) if with_mfr else None,
         )
+    print("MFR")
     evaluate_predictions(comb_raw, comb_norm, mfr_preds)
+    print("MODELS")
     return evaluate_predictions(comb_raw, comb_norm, comb_preds)[2]  # ERR
 
 
@@ -105,7 +112,6 @@ def train_predict_evaluate(
     drop_features=None,
     with_mfr=False,
 ):
-    # NOTE assumes create_index already saved to file, as is fine with non-cv operation
     load_rng = np.random.RandomState(42)
     train_df = load_candidates(train_df_path, random_state=load_rng, shuffle=True).drop(
         columns=drop_features if drop_features is not None else []
@@ -118,13 +124,15 @@ def train_predict_evaluate(
         clf = train_model(model, train_df, model_path)
     else:
         clf = load(model_path)
-    pred_tokens = predict_normalisations(
+    print("MFR")
+    pred_tokens = predict_candidates(
         predict_probs(clf, test_df),
         threshold=0.5,
     )
     train_raw, train_norm = loadNormData(train_tweets_path)
     evaluate_predictions(raw, norm, mfr(train_raw, train_norm, raw))
-    predictions = normalise(
+    print("MODEL")
+    predictions = predict_normalisation(
         raw,
         pred_tokens,
         output_path,
@@ -181,15 +189,16 @@ def feature_ablation(model, output_path):
 
 
 if __name__ == "__main__":
-    # # params = {"min_samples_leaf": 5,
-    # #           # "class_weight": "balanced",
-    # #           }
-    # # model = create_rf(params, np.random.RandomState(42))
-    params = {"model__solver": "liblinear", "model__class_weight": "balanced"}
+    # params = {
+    #     "min_samples_leaf": 5,
+    #     # "class_weight": "balanced",
+    # }
+    # model = create_rf(params, np.random.RandomState(42))
+    params = {"model__solver": "newton-cholesky"}
     model = create_logreg(params, np.random.RandomState(42))
     train_predict_evaluate(
         model,
-        os.path.join(DATA_PATH, "../models/rf.joblib"),
+        os.path.join(DATA_PATH, "../models/logreg.joblib"),
         os.path.join(DATA_PATH, "raw/train.norm"),
         os.path.join(DATA_PATH, "raw/test.norm"),
         os.path.join(DATA_PATH, "hpc/combined.cands"),

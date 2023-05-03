@@ -17,7 +17,7 @@ def test_process_data_file():
     raw_data, norm_data = normEval.loadNormData(
         os.path.join(DATA_PATH, "raw/train.norm")
     )
-    cands = load_candidates(os.path.join(DATA_PATH, "hpc/dev_final.cands")).fillna(0)
+    cands = load_candidates(os.path.join(DATA_PATH, "hpc/dev.cands")).fillna(0)
     # w2v = word2vec.get_vectors(raw_input + raw_data)
     normalisations = norm_dict.construct(raw_data, norm_data)
     with open(os.path.join(DATA_PATH, "processed/task_lexicon.pickle"), "rb") as lf:
