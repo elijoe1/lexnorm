@@ -4,12 +4,12 @@ from lexnorm.data.normEval import loadNormData
 import pandas as pd
 import os
 from lexnorm.definitions import DATA_PATH
-from lexnorm.generate_extract.process import create_index, link_to_gold
+from lexnorm.generate_extract.candidates import create_index, link_to_gold
 from lexnorm.generate_extract.filtering import is_eligible
 from lexnorm.models.classifiers import train_predict_evaluate_cv
 from lexnorm.models.normalise import load_candidates
 from lexnorm.models.predict import predict_probs
-from lexnorm.evaluation.analyse import analyse
+from lexnorm.evaluation.analyse import analyse, get_tokens_from_ids
 from collections import Counter
 from joblib import load
 import statistics
@@ -56,8 +56,13 @@ def modules(raw, norm, candidates, verbose=True):
         recall_solo = len(modules[column]) / num_norms
         without = set().union(*[v for k, v in modules.items() if k != column])
         recall_without = len(without) / num_norms
-        unique = modules[column] - without
-        resp[column] = (recall_solo, recall_without, unique, resp[column])
+        unique = get_tokens_from_ids(modules[column] - without, raw, norm)
+        resp[column] = (
+            recall_solo,
+            recall_without,
+            unique,
+            resp[column],
+        )
         if verbose:
             print(column.upper())
             print(f"Solo recall (over normalisations): {recall_solo*100:.2f}")
@@ -65,6 +70,7 @@ def modules(raw, norm, candidates, verbose=True):
             print(
                 f"Unique recall (over normalisations): {len(unique)/num_norms * 100:.2f}"
             )
+            print(f"Unique normalisations found: {unique}")
             print(f"Average candidates generated per token: {resp[column][3]:.2f}")
     combined_recall = len(set().union(*[v for v in modules.values()])) / num_norms
     if verbose:
@@ -290,7 +296,7 @@ def evaluate_cv(model_dir, tweets_path, df_dir):
     for i, folds in enumerate(kf.split(raw, norm)):
         test_df = create_index(
             load_candidates(
-                os.path.join(DATA_PATH, df_dir, f"test_{i}.txt"), shuffle=True
+                os.path.join(DATA_PATH, df_dir, f"test_{i}.cands"), shuffle=True
             ),
             offset,
         )
@@ -298,7 +304,7 @@ def evaluate_cv(model_dir, tweets_path, df_dir):
         train_idx, test_idx = folds
         comb_raw += raw[test_idx].tolist()
         comb_norm += norm[test_idx].tolist()
-        clf = load(os.path.join(DATA_PATH, model_dir, f"rf_{i}.joblib"))
+        clf = load(os.path.join(DATA_PATH, model_dir, f"{i}.joblib"))
         comb_pred_df = pd.concat([comb_pred_df, predict_probs(clf, test_df)])
     ranking(comb_raw, comb_norm, comb_pred_df)
     not_generated(comb_raw, comb_norm, comb_pred_df)
@@ -322,7 +328,7 @@ if __name__ == "__main__":
         os.path.join(DATA_PATH, "hpc/test.cands"),
     )
     # evaluate_cv(
-    #     os.path.join(DATA_PATH, "../models"),
+    #     os.path.join(DATA_PATH, "../models/rf"),
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )

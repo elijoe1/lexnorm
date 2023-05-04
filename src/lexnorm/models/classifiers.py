@@ -8,7 +8,7 @@ from lexnorm.data.baseline import mfr
 from lexnorm.data.normEval import loadNormData
 from lexnorm.definitions import DATA_PATH
 from lexnorm.evaluation.predictions import evaluate_predictions
-from lexnorm.generate_extract.process import create_index
+from lexnorm.generate_extract.candidates import create_index
 from lexnorm.models.logreg import create_logreg
 
 from lexnorm.models.normalise import prep_train, load_candidates
@@ -17,6 +17,7 @@ from lexnorm.models.predict import (
     predict_probs,
     predict_normalisation,
 )
+from lexnorm.models.random_forest import create_rf
 
 
 def train_model(model, candidates, output_path=None):
@@ -141,33 +142,33 @@ def train_predict_evaluate(
 
 
 if __name__ == "__main__":
-    # params = {
-    #     "min_samples_leaf": 5,
-    #     # "class_weight": "balanced",
-    # }
-    # model = create_rf(params, np.random.RandomState(42))
-    params = {"model__solver": "newton-cholesky"}
-    model = create_logreg(params, np.random.RandomState(42))
-    train_predict_evaluate(
-        model,
-        os.path.join(DATA_PATH, "../models/logreg.joblib"),
-        os.path.join(DATA_PATH, "raw/train.norm"),
-        os.path.join(DATA_PATH, "raw/test.norm"),
-        os.path.join(DATA_PATH, "hpc/combined.cands"),
-        os.path.join(DATA_PATH, "hpc/test.cands"),
-        os.path.join(DATA_PATH, "../models/output.txt"),
-        train_first=True,
-        # drop_features="cosine_to_orig",
-        # with_mfr=True,
-    )
-    # train_predict_evaluate_cv(
+    params = {
+        "min_samples_leaf": 5,
+        # "class_weight": "balanced",
+    }
+    model = create_rf(params, np.random.RandomState(42))
+    # params = {"model__solver": "newton-cholesky"}
+    # model = create_logreg(params, np.random.RandomState(42))
+    # train_predict_evaluate(
     #     model,
-    #     os.path.join(DATA_PATH, "../models/logreg/"),
+    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
-    #     os.path.join(DATA_PATH, "hpc/cv"),
-    #     os.path.join(DATA_PATH, "../models/output/logreg/"),
-    #     # with_mfr=True
-    #     # drop_features="orig_norms_seen",
-    #     train_first=True,
+    #     os.path.join(DATA_PATH, "raw/test.norm"),
+    #     os.path.join(DATA_PATH, "hpc/combined.cands"),
+    #     os.path.join(DATA_PATH, "hpc/test.cands"),
+    #     os.path.join(DATA_PATH, "../models/output.txt"),
+    #     train_first=False,
+    #     # drop_features="cosine_to_orig",
+    #     # with_mfr=True,
     # )
+    train_predict_evaluate_cv(
+        model,
+        os.path.join(DATA_PATH, "../models/rf/"),
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "hpc/cv"),
+        os.path.join(DATA_PATH, "../models/output/rf/"),
+        # with_mfr=True
+        # drop_features="orig_norms_seen",
+        train_first=False,
+    )
     # feature_ablation(os.path.join(DATA_PATH, "hpc/feature_ablation.txt"))

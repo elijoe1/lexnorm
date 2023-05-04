@@ -15,3 +15,15 @@ def analyse(raw, norm):
                 elif is_eligible(raw_tok):
                     normalisations += 1
     return eligible, normalisations
+
+
+def get_tokens_from_ids(ids, raw, norm):
+    id = -1
+    tokens = []
+    for raw_tweet, norm_tweet in zip(raw, norm):
+        for raw_tok, norm_tok in zip(raw_tweet, norm_tweet):
+            if is_eligible(raw_tok):
+                id += 1
+                if id in ids:
+                    tokens.append((raw_tok, norm_tok))
+    return tokens
