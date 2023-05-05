@@ -9,10 +9,7 @@ def create_logreg(parameters, random_state=None):
             ("scaler", StandardScaler()),
             (
                 "model",
-                LogisticRegression(
-                    verbose=True,
-                    random_state=random_state,
-                ),
+                LogisticRegression(verbose=True, random_state=random_state, n_jobs=-1),
             ),
         ]
     )

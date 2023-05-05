@@ -11,6 +11,7 @@ from sklearn import clone
 
 from lexnorm.definitions import DATA_PATH
 from lexnorm.models.classifiers import train_predict_evaluate_cv
+from lexnorm.models.logreg import create_logreg
 from lexnorm.models.random_forest import create_rf
 
 
@@ -64,7 +65,7 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
 
 def search(model, hyperparameters, tweets_path, df_dir):
     configs = generate_configs(hyperparameters)
-    configs = sample(configs, 100)
+    # configs = sample(configs, 100)
     results = {}
     for config in configs:
         new_model = clone(model)
@@ -78,21 +79,35 @@ def search(model, hyperparameters, tweets_path, df_dir):
 
 
 if __name__ == "__main__":
-    model = create_rf({}, 100, n_jobs=-1, random_state=np.random.RandomState(42))
+    # model = create_rf({}, 100, n_jobs=-1, random_state=np.random.RandomState(42))
+    # output = search(
+    #     model,
+    #     {
+    #         "max_depth": [5, 10, 15, None],
+    #         "min_samples_leaf": [1, 10, 100, 1000],
+    #         "min_samples_split": [2, 10, 100, 1000],
+    #         "max_leaf_nodes": [10, 100, None],
+    #         "class_weight": ["balanced", "balanced_subsample", None],
+    #         "max_features": ["sqrt", "log2", None],
+    #     },
+    #     os.path.join(DATA_PATH, "processed/combined.txt"),
+    #     os.path.join(DATA_PATH, "hpc/cv"),
+    # )
+    model = create_logreg({}, random_state=np.random.RandomState(42))
     output = search(
         model,
         {
-            "max_depth": [5, 10, 15, None],
-            "min_samples_leaf": [1, 10, 100, 1000],
-            "min_samples_split": [2, 10, 100, 1000],
-            "max_leaf_nodes": [10, 100, None],
-            "class_weight": ["balanced", "balanced_subsample", None],
-            "max_features": ["sqrt", "log2", None],
+            "model__solver": ["newton-cholesky", "liblinear", "sag"],
+            "model__penalty": {"l2"},
+            "model__C": [100, 10, 1, 0.1, 0.01],
+            "model__class_weight": ["balanced", None],
         },
         os.path.join(DATA_PATH, "processed/combined.txt"),
         os.path.join(DATA_PATH, "hpc/cv"),
     )
-    with open(os.path.join(DATA_PATH, "processed/hyperparams.pickle"), "wb") as f:
+    with open(
+        os.path.join(DATA_PATH, "processed/logreg_hyperparams.pickle"), "wb"
+    ) as f:
         pickle.dump(output, f)
     # with open(os.path.join(DATA_PATH, "processed/hyperparams.pickle"), "rb") as f:
     #     output = pickle.load(f)
