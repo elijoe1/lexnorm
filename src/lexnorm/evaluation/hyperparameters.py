@@ -61,9 +61,23 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
     return results
 
 
+def search(model, hyperparameters, tweets_path, df_dir):
+    configs = generate_configs(hyperparameters)
+    results = {}
+    for config in configs:
+        new_model = clone(model)
+        new_model.set_params(**config)
+        err = train_predict_evaluate_cv(
+            new_model, None, tweets_path, df_dir, None, True
+        )
+        print(config, err)
+        results[tuple(sorted(config.items()))] = err
+    return results
+
+
 if __name__ == "__main__":
-    model = create_rf({}, 100, n_jobs=1, random_state=np.random.RandomState(42))
-    output = hyperparameter_search(
+    model = create_rf({}, 100, n_jobs=-1, random_state=np.random.RandomState(42))
+    output = search(
         model,
         {
             "max_depth": [5, 10, 15, None],
