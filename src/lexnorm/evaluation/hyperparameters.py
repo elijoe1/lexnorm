@@ -48,7 +48,7 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
                 print(config)
                 p = Process(
                     target=train_pred_eval_with_hyperparameters,
-                    args=(model, configs, tweets_path, df_dir, queue),
+                    args=(model, config, tweets_path, df_dir, queue),
                 )
                 processes.append(p)
         for p in processes:
