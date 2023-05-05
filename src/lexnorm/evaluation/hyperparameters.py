@@ -39,7 +39,7 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
     queue = multiprocessing.Queue()
     cores = multiprocessing.cpu_count()
     repetitions = math.ceil(len(configs) / cores)
-    results = []
+    results = {}
     for i in range(repetitions):
         processes = []
         for j in range(cores):
@@ -53,7 +53,7 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
             p.start()
         for _ in range(len(processes)):
             params, result = queue.get()
-            results[params] = result
+            results[tuple(sorted(result.items()))] = result
         for p in processes:
             p.join()
     return results
