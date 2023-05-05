@@ -30,6 +30,7 @@ def train_pred_eval_with_hyperparameters(
     model = clone(model)
     model.set_params(**hyperparameters)
     err = train_predict_evaluate_cv(model, None, tweets_path, df_dir, None, True)
+    print(hyperparameters, err)
     queue.put((hyperparameters, err))
 
 
