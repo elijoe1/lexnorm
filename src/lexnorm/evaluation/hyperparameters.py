@@ -42,44 +42,47 @@ def search(model, hyperparameters, tweets_path, df_dir):
 
 
 if __name__ == "__main__":
-    model = create_rf({}, 100, n_jobs=-1, random_state=np.random.RandomState(42))
-    output = search(
-        model,
-        # {
-        #     "max_depth": [5, 10, 15, None],
-        #     "min_samples_leaf": [1, 10, 100, 1000],
-        #     "min_samples_split": [2, 10, 100, 1000],
-        #     "max_leaf_nodes": [10, 100, None],
-        #     "class_weight": ["balanced", "balanced_subsample", None],
-        #     "max_features": ["sqrt", "log2", None],
-        # },
-        {
-            "max_depth": [7, 10, 13, 16],
-            "min_samples_leaf": [1, 10, 20],
-            "min_samples_split": [2, 6, 10, 14],
-            "max_leaf_nodes": [100, None],
-            "class_weight": [None],
-            "max_features": [None],
-        },
-        os.path.join(DATA_PATH, "processed/combined.txt"),
-        os.path.join(DATA_PATH, "hpc/cv"),
-    )
-    # model = create_logreg({}, random_state=np.random.RandomState(42))
+    # model = create_rf({}, 100, n_jobs=-1, random_state=np.random.RandomState(42))
     # output = search(
     #     model,
+    #     # {
+    #     #     "max_depth": [5, 10, 15, None],
+    #     #     "min_samples_leaf": [1, 10, 100, 1000],
+    #     #     "min_samples_split": [2, 10, 100, 1000],
+    #     #     "max_leaf_nodes": [10, 100, None],
+    #     #     "class_weight": ["balanced", "balanced_subsample", None],
+    #     #     "max_features": ["sqrt", "log2", None],
+    #     # },
     #     {
-    #         "model__solver": ["newton-cholesky"],
-    #         "model__penalty": ["l2"],
-    #         "model__C": np.arange(0.3, 0, -0.01).tolist(),
-    #         "model__class_weight": [None],
+    #         "max_depth": [7, 10, 13, 16],
+    #         "min_samples_leaf": [1, 10, 20],
+    #         "min_samples_split": [2, 6, 10, 14],
+    #         "max_leaf_nodes": [100, None],
+    #         "class_weight": [None],
+    #         "max_features": [None],
     #     },
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
+    model = create_logreg({}, random_state=np.random.RandomState(42))
+    output = search(
+        model,
+        {
+            "model__solver": ["newton-cholesky"],
+            "model__penalty": ["l2"],
+            "model__C": np.arange(0.03, 0, -0.001).tolist(),
+            "model__class_weight": [None],
+        },
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "hpc/cv"),
+    )
     with open(
-        os.path.join(DATA_PATH, "processed/rf_hyperparams_refined.pickle"), "wb"
+        os.path.join(DATA_PATH, "processed/logreg_hyperparams_refined_again.pickle"),
+        "wb",
     ) as f:
         pickle.dump(output, f)
-    # with open(os.path.join(DATA_PATH, "processed/hyperparams.pickle"), "rb") as f:
+    # with open(
+    #     os.path.join(DATA_PATH, "processed/logreg_hyperparams_refined.pickle"), "rb"
+    # ) as f:
     #     output = pickle.load(f)
     # print(sorted(output.items(), key=lambda x: x[1], reverse=True))
