@@ -4,6 +4,7 @@ import os
 import pickle
 from itertools import product
 from multiprocessing import Process
+from random import sample
 
 import numpy as np
 from sklearn import clone
@@ -63,6 +64,7 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
 
 def search(model, hyperparameters, tweets_path, df_dir):
     configs = generate_configs(hyperparameters)
+    configs = sample(configs, 100)
     results = {}
     for config in configs:
         new_model = clone(model)
