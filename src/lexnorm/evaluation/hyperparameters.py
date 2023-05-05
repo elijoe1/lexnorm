@@ -53,7 +53,7 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
             p.start()
         for _ in range(len(processes)):
             params, result = queue.get()
-            results[tuple(sorted(result.items()))] = result
+            results[tuple(sorted(params.items()))] = result
         for p in processes:
             p.join()
     return results
