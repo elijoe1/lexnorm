@@ -72,7 +72,7 @@ def search(model, hyperparameters, tweets_path, df_dir):
         err = train_predict_evaluate_cv(
             new_model, None, tweets_path, df_dir, None, True
         )
-        print(config, err)
+        print(config, err, flush=True)
         results[tuple(sorted(config.items()))] = err
     return results
 
@@ -96,4 +96,4 @@ if __name__ == "__main__":
         pickle.dump(output, f)
     # with open(os.path.join(DATA_PATH, "processed/hyperparams.pickle"), "rb") as f:
     #     output = pickle.load(f)
-    # print(sorted(output[0].items(), key=lambda x: x[1], reverse=True))
+    # print(sorted(output.items(), key=lambda x: x[1], reverse=True))
