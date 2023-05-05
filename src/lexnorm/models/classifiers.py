@@ -98,7 +98,7 @@ def train_predict_evaluate_cv(
     print("MFR")
     evaluate_predictions(comb_raw, comb_norm, mfr_preds)
     print("MODELS")
-    return evaluate_predictions(comb_raw, comb_norm, comb_preds)[2]  # ERR
+    return evaluate_predictions(comb_raw, comb_norm, comb_preds)[1:6]
 
 
 def train_predict_evaluate(
