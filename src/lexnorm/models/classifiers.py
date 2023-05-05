@@ -146,8 +146,11 @@ if __name__ == "__main__":
     params = {
         # "min_samples_leaf": 5,
         # "class_weight": "balanced",
+        "max_depth": 10,
+        "max_leaf_nodes": 100,
+        "min_samples_split": 10,
     }
-    model = create_rf(params, 100, np.random.RandomState(42))
+    model = create_rf(params, 100, random_state=np.random.RandomState(42))
     # # params = {"model__solver": "newton-cholesky"}
     # # model = create_logreg(params, np.random.RandomState(42))
     train_predict_evaluate(

@@ -26,43 +26,6 @@ def generate_configs(hyperparameters: dict):
     return config_dicts
 
 
-def train_pred_eval_with_hyperparameters(
-    model, hyperparameters, tweets_path, df_dir, queue
-):
-    model = clone(model)
-    model.set_params(**hyperparameters)
-    err = train_predict_evaluate_cv(model, None, tweets_path, df_dir, None, True)
-    print(hyperparameters, err)
-    queue.put((hyperparameters, err))
-
-
-def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
-    configs = generate_configs(hyperparameters)
-    queue = multiprocessing.Queue()
-    cores = multiprocessing.cpu_count() - 5  # leave some headroom
-    repetitions = math.ceil(len(configs) / cores)
-    results = {}
-    for i in range(repetitions):
-        processes = []
-        for j in range(cores):
-            if len(configs) > i * cores + j:
-                config = configs[i * cores + j]
-                print(config)
-                p = Process(
-                    target=train_pred_eval_with_hyperparameters,
-                    args=(model, config, tweets_path, df_dir, queue),
-                )
-                processes.append(p)
-        for p in processes:
-            p.start()
-        for _ in range(len(processes)):
-            params, result = queue.get()
-            results[tuple(sorted(params.items()))] = result
-        for p in processes:
-            p.join()
-    return results
-
-
 def search(model, hyperparameters, tweets_path, df_dir):
     configs = generate_configs(hyperparameters)
     # configs = sample(configs, 100)
@@ -82,13 +45,21 @@ if __name__ == "__main__":
     # model = create_rf({}, 100, n_jobs=-1, random_state=np.random.RandomState(42))
     # output = search(
     #     model,
+    #     # {
+    #     #     "max_depth": [5, 10, 15, None],
+    #     #     "min_samples_leaf": [1, 10, 100, 1000],
+    #     #     "min_samples_split": [2, 10, 100, 1000],
+    #     #     "max_leaf_nodes": [10, 100, None],
+    #     #     "class_weight": ["balanced", "balanced_subsample", None],
+    #     #     "max_features": ["sqrt", "log2", None],
+    #     # },
     #     {
     #         "max_depth": [5, 10, 15, None],
     #         "min_samples_leaf": [1, 10, 100, 1000],
     #         "min_samples_split": [2, 10, 100, 1000],
     #         "max_leaf_nodes": [10, 100, None],
-    #         "class_weight": ["balanced", "balanced_subsample", None],
-    #         "max_features": ["sqrt", "log2", None],
+    #         "class_weight": [None],
+    #         "max_features": [None],
     #     },
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
@@ -97,18 +68,20 @@ if __name__ == "__main__":
     output = search(
         model,
         {
-            "model__solver": ["newton-cholesky", "liblinear", "sag"],
-            "model__penalty": {"l2"},
-            "model__C": [100, 10, 1, 0.1, 0.01],
-            "model__class_weight": ["balanced", None],
+            "model__solver": ["newton-cholesky"],
+            "model__penalty": ["l2"],
+            "model__C": np.arange(0.3, 0, -0.01).tolist(),
+            "model__class_weight": [None],
         },
         os.path.join(DATA_PATH, "processed/combined.txt"),
         os.path.join(DATA_PATH, "hpc/cv"),
     )
     with open(
-        os.path.join(DATA_PATH, "processed/logreg_hyperparams.pickle"), "wb"
+        os.path.join(DATA_PATH, "processed/logreg_hyperparams_refined.pickle"), "wb"
     ) as f:
         pickle.dump(output, f)
-    # with open(os.path.join(DATA_PATH, "processed/hyperparams.pickle"), "rb") as f:
+    # with open(
+    #     os.path.join(DATA_PATH, "processed/logreg_hyperparams.pickle"), "rb"
+    # ) as f:
     #     output = pickle.load(f)
     # print(sorted(output.items(), key=lambda x: x[1], reverse=True))
