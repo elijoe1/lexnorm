@@ -36,7 +36,6 @@ def train_pred_eval_with_hyperparameters(
 
 def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
     configs = generate_configs(hyperparameters)
-    print(configs)
     queue = multiprocessing.Queue()
     cores = multiprocessing.cpu_count()
     repetitions = math.ceil(len(configs) / cores)
@@ -45,9 +44,11 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
         processes = []
         for j in range(cores):
             if len(configs) > i * cores + j:
+                config = configs[i * cores + j]
+                print(config)
                 p = Process(
                     target=train_pred_eval_with_hyperparameters,
-                    args=(model, configs[i * cores + j], tweets_path, df_dir, queue),
+                    args=(model, configs, tweets_path, df_dir, queue),
                 )
                 processes.append(p)
         for p in processes:
@@ -61,14 +62,22 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
 
 
 if __name__ == "__main__":
-    model = create_rf({}, random_state=np.random.RandomState(42))
-    output = (
-        hyperparameter_search(
-            model,
-            {"max_depth": [3, 5, None], "min_samples_leaf": [1, 3, 5]},
-            os.path.join(DATA_PATH, "processed/combined.txt"),
-            os.path.join(DATA_PATH, "hpc/cv"),
-        ),
+    model = create_rf({}, 100, random_state=np.random.RandomState(42))
+    output = hyperparameter_search(
+        model,
+        {
+            "max_depth": [5, 10, 15, None],
+            "min_samples_leaf": [1, 10, 100, 1000],
+            "min_samples_split": [2, 10, 100, 1000],
+            "max_leaf_nodes": [10, 100, None],
+            "class_weight": ["balanced", "balanced_subsample", None],
+            "max_features": ["sqrt", "log2", None],
+        },
+        os.path.join(DATA_PATH, "processed/combined.txt"),
+        os.path.join(DATA_PATH, "hpc/cv"),
     )
     with open(os.path.join(DATA_PATH, "processed/hyperparams.pickle"), "wb") as f:
         pickle.dump(output, f)
+    # with open(os.path.join(DATA_PATH, "processed/hyperparams.pickle"), "rb") as f:
+    #     output = pickle.load(f)
+    # print(sorted(output[0].items(), key=lambda x: x[1], reverse=True))

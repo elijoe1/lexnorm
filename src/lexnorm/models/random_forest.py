@@ -1,9 +1,9 @@
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 
 
-def create_rf(parameters, random_state=None):
+def create_rf(parameters, n_estimators, random_state=None):
     rf_clf = RandomForestClassifier(
-        n_estimators=100,
+        n_estimators=n_estimators,
         n_jobs=-1,
         random_state=random_state,
         verbose=1,
