@@ -1,10 +1,10 @@
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 
 
-def create_rf(parameters, n_estimators, random_state=None):
+def create_rf(parameters, n_estimators, n_jobs=-1, random_state=None):
     rf_clf = RandomForestClassifier(
         n_estimators=n_estimators,
-        n_jobs=-1,
+        n_jobs=n_jobs,
         random_state=random_state,
         verbose=1,
         # class_weight="balanced",

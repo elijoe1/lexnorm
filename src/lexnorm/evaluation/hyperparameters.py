@@ -37,7 +37,7 @@ def train_pred_eval_with_hyperparameters(
 def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
     configs = generate_configs(hyperparameters)
     queue = multiprocessing.Queue()
-    cores = multiprocessing.cpu_count()
+    cores = multiprocessing.cpu_count() - 5  # leave some headroom
     repetitions = math.ceil(len(configs) / cores)
     results = {}
     for i in range(repetitions):
@@ -62,7 +62,7 @@ def hyperparameter_search(model, hyperparameters: dict, tweets_path, df_dir):
 
 
 if __name__ == "__main__":
-    model = create_rf({}, 100, random_state=np.random.RandomState(42))
+    model = create_rf({}, 100, n_jobs=1, random_state=np.random.RandomState(42))
     output = hyperparameter_search(
         model,
         {
