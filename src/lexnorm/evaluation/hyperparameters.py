@@ -74,9 +74,9 @@ if __name__ == "__main__":
         #     "max_features": [None],
         # },
         {
-            "max_depth": list(range(1, 30)),
-            "min_samples_leaf": list(range(1, 30)),
-            "min_samples_split": list(range(2, 30)),
+            "max_depth": list(range(1, 20)),
+            "min_samples_leaf": list(range(1, 20)),
+            "min_samples_split": list(range(2, 20)),
             "max_leaf_nodes": list(range(50, 300)),
         },
         os.path.join(DATA_PATH, "processed/combined.txt"),
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
     with open(
-        os.path.join(DATA_PATH, "processed/rf_hyperparams_refined_again.pickle"),
+        os.path.join(DATA_PATH, "processed/rf_hyperparams_refined_smallrange.pickle"),
         "wb",
     ) as f:
         pickle.dump(output, f)
