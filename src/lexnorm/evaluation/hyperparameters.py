@@ -31,7 +31,7 @@ def create_random(hyperparameters: dict, n_samples=100):
     for _ in range(n_samples):
         config_dict = {}
         for k, v in hyperparameters.items():
-            config_dict[k] = sample(v, 1)
+            config_dict[k] = sample(v, 1)[0]
         config_dicts.append(config_dict)
     return config_dicts
 
