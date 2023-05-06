@@ -96,7 +96,9 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
     with open(
-        os.path.join(DATA_PATH, "processed/rf_hyperparams_refined_smallrange_smaller.pickle"),
+        os.path.join(
+            DATA_PATH, "processed/rf_hyperparams_refined_smallrange_smaller.pickle"
+        ),
         "wb",
     ) as f:
         pickle.dump(output, f)
