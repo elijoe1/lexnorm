@@ -6,7 +6,7 @@ import os
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.candidates import create_index, link_to_gold
 from lexnorm.generate_extract.filtering import is_eligible
-from lexnorm.models.classifiers import train_predict_evaluate_cv
+from lexnorm.models.classifiers import train_predict_evaluate_cv, train_predict_evaluate
 from lexnorm.models.normalise import load_candidates
 from lexnorm.models.predict import predict_probs
 from lexnorm.evaluation.analyse import analyse, get_tokens_from_ids
@@ -270,12 +270,13 @@ def feature_ablation(model, output_path):
     ]
     scores = {}
     for feature in features:
-        # TODO do on combined and test
-        scores[feature] = train_predict_evaluate_cv(
+        scores[feature] = train_predict_evaluate(
             model,
             None,
             os.path.join(DATA_PATH, "processed/combined.txt"),
-            os.path.join(DATA_PATH, "hpc/cv"),
+            os.path.join(DATA_PATH, "raw/test.norm"),
+            os.path.join(DATA_PATH, "hpc/combined.cands"),
+            os.path.join(DATA_PATH, "hpc/test.cands"),
             None,
             train_first=True,
             drop_features=feature,
