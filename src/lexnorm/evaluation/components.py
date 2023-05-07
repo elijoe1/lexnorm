@@ -1,3 +1,5 @@
+import pickle
+
 from sklearn.model_selection import KFold
 
 from lexnorm.data.normEval import loadNormData
@@ -7,6 +9,7 @@ from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.candidates import create_index, link_to_gold
 from lexnorm.generate_extract.filtering import is_eligible
 from lexnorm.models.classifiers import train_predict_evaluate_cv, train_predict_evaluate
+from lexnorm.models.logreg import create_logreg
 from lexnorm.models.normalise import load_candidates
 from lexnorm.models.predict import predict_probs
 from lexnorm.evaluation.analyse import analyse, get_tokens_from_ids
@@ -14,6 +17,8 @@ from collections import Counter
 from joblib import load
 import statistics
 import numpy as np
+
+from lexnorm.models.random_forest import create_rf
 
 
 def modules(raw, norm, candidates, verbose=True):
@@ -239,6 +244,7 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=1, norms_only=
 
 def feature_ablation(model, output_path):
     features = [
+        None,
         "cosine_to_orig",
         "frac_norms_seen",
         "from_clipping",
@@ -270,7 +276,7 @@ def feature_ablation(model, output_path):
     ]
     scores = {}
     for feature in features:
-        scores[feature] = train_predict_evaluate(
+        scores[feature if feature is not None else "all"] = train_predict_evaluate(
             model,
             None,
             os.path.join(DATA_PATH, "processed/combined.txt"),
@@ -281,8 +287,8 @@ def feature_ablation(model, output_path):
             train_first=True,
             drop_features=feature,
         )
-    with open(output_path, "w") as f:
-        f.write(str(scores))
+    with open(output_path, "wb") as f:
+        pickle.dump(scores, f)
 
 
 def evaluate_cv(model_dir, tweets_path, df_dir):
@@ -323,13 +329,24 @@ def evaluate(model_path, tweets_path, df_path):
 
 
 if __name__ == "__main__":
-    evaluate(
-        os.path.join(DATA_PATH, "../models/rf.joblib"),
-        os.path.join(DATA_PATH, "raw/test.norm"),
-        os.path.join(DATA_PATH, "hpc/test.cands"),
-    )
+    # evaluate(
+    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
+    #     os.path.join(DATA_PATH, "raw/test.norm"),
+    #     os.path.join(DATA_PATH, "hpc/test.cands"),
+    # )
     # evaluate_cv(
     #     os.path.join(DATA_PATH, "../models/rf"),
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
+    # params = {"model__solver": "newton-cholesky", "model__C": 0.004}
+    # model = create_logreg(params, np.random.RandomState(42))
+    # feature_ablation(
+    #     model, os.path.join(DATA_PATH, "eval/logreg_feature_ablation.pickle")
+    # )
+    params = {"max_depth": 16, "max_features": None}
+    model = create_rf(params, 100, random_state=np.random.RandomState(42))
+    feature_ablation(model, os.path.join(DATA_PATH, "eval/rf_feature_ablation.pickle"))
+    # with open(os.path.join(DATA_PATH, "eval/rf_feature_ablation.pickle"), "rb") as f:
+    #     output = pickle.load(f)
+    # print(output)
