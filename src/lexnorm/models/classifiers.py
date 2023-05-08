@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import numpy as np
 from joblib import dump, load
@@ -139,24 +140,23 @@ def train_predict_evaluate(
         output_path,
         baseline_preds=mfr(train_raw, train_norm, raw) if with_mfr else None,
     )
-    return evaluate_predictions(raw, norm, predictions)[2]  # ERR
+    return evaluate_predictions(raw, norm, predictions)[1:6]
 
 
 if __name__ == "__main__":
     params = {
         # "min_samples_leaf": 5,
         # "class_weight": "balanced",
-        "max_depth": 10,
-        "max_leaf_nodes": 100,
-        "min_samples_split": 10,
+        "max_depth": 16,
+        "max_features": None,
     }
     model = create_rf(params, 100, random_state=np.random.RandomState(42))
-    # # params = {"model__solver": "newton-cholesky"}
-    # # model = create_logreg(params, np.random.RandomState(42))
+    # params = {"model__solver": "newton-cholesky", "model__C": 0.004}
+    # model = create_logreg(params, np.random.RandomState(42))
     train_predict_evaluate(
         model,
-        # os.path.join(DATA_PATH, "../models/rf.joblib"),
-        None,
+        os.path.join(DATA_PATH, "../models/rf.joblib"),
+        # None,
         os.path.join(DATA_PATH, "processed/combined.txt"),
         os.path.join(DATA_PATH, "raw/test.norm"),
         os.path.join(DATA_PATH, "hpc/combined.cands"),
@@ -167,14 +167,15 @@ if __name__ == "__main__":
         # drop_features="cosine_to_orig",
         # with_mfr=True,
     )
-    # train_predict_evaluate_cv(
-    #     model,
+    # output = train_predict_evaluate_cv(
     #     None,
+    #     os.path.join(DATA_PATH, "../models/logreg"),
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     #     None,
     #     # with_mfr=True
     #     # drop_features="orig_norms_seen",
-    #     train_first=True,
+    #     train_first=False,
     # )
-    # feature_ablation(os.path.join(DATA_PATH, "hpc/feature_ablation.txt"))
+    # with open(os.path.join(DATA_PATH, "processed/mfr.pickle"), "wb") as f:
+    #     pickle.dump(output, f)
