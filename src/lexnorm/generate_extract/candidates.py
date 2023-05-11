@@ -10,7 +10,6 @@ from spylls.hunspell import Dictionary
 
 from lexnorm.data.word_ngrams import add_ngram_chunks
 from lexnorm.definitions import DATA_PATH
-from lexnorm.generate_extract.filtering import is_eligible
 
 from lexnorm.generate_extract.modules import *
 

@@ -1,9 +1,6 @@
-import math
-import multiprocessing
 import os
 import pickle
 from itertools import product
-from multiprocessing import Process
 from random import sample
 
 import numpy as np
@@ -65,14 +62,6 @@ if __name__ == "__main__":
         #     "class_weight": ["balanced", "balanced_subsample", None],
         #     "max_features": ["sqrt", "log2", None],
         # },
-        # {
-        #     "max_depth": [7, 10, 13, 16],
-        #     "min_samples_leaf": [1, 10, 20],
-        #     "min_samples_split": [2, 6, 10, 14],
-        #     "max_leaf_nodes": [100, None],
-        #     "class_weight": [None],
-        #     "max_features": [None],
-        # },
         {
             "max_depth": list(range(3, 20)),
             "min_samples_leaf": list(range(1, 10)),
@@ -96,15 +85,7 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
     with open(
-        os.path.join(
-            DATA_PATH, "processed/rf_hyperparams_refined_smallrange_smaller.pickle"
-        ),
+        os.path.join(DATA_PATH, "processed/rf_hyperparams_refined_smallrange.pickle"),
         "wb",
     ) as f:
         pickle.dump(output, f)
-    # with open(
-    #     os.path.join(DATA_PATH, "processed/rf_hyperparams_refined.pickle"),
-    #     "rb",
-    # ) as f:
-    #     output = pickle.load(f)
-    # print(sorted(output.items(), key=lambda x: x[1][1], reverse=True))

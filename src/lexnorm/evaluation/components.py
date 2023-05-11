@@ -10,15 +10,14 @@ from lexnorm.generate_extract.candidates import create_index, link_to_gold
 from lexnorm.generate_extract.filtering import is_eligible
 from lexnorm.models.classifiers import train_predict_evaluate_cv, train_predict_evaluate
 from lexnorm.models.logreg import create_logreg
-from lexnorm.models.normalise import load_candidates
+from lexnorm.models.random_forest import create_rf
+from lexnorm.models.prepare_df import load_candidates
 from lexnorm.models.predict import predict_probs
 from lexnorm.evaluation.analyse import analyse, get_tokens_from_ids
 from collections import Counter
 from joblib import load
 import statistics
 import numpy as np
-
-from lexnorm.models.random_forest import create_rf
 
 
 def modules(raw, norm, candidates, verbose=True):
@@ -61,7 +60,7 @@ def modules(raw, norm, candidates, verbose=True):
         recall_solo = len(modules[column]) / num_norms
         without = set().union(*[v for k, v in modules.items() if k != column])
         recall_without = len(without) / num_norms
-        unique = get_tokens_from_ids(modules[column] - without, raw, norm)
+        unique = Counter(get_tokens_from_ids(modules[column] - without, raw, norm))
         resp[column] = (
             recall_solo,
             recall_without,
@@ -73,9 +72,9 @@ def modules(raw, norm, candidates, verbose=True):
             print(f"Solo recall (over normalisations): {recall_solo*100:.2f}")
             print(f"Ablation recall (over normalisations): {recall_without*100:.2f}")
             print(
-                f"Unique recall (over normalisations): {len(unique)/num_norms * 100:.2f}"
+                f"Unique recall (over normalisations): {sum(unique.values())/num_norms * 100:.2f}"
             )
-            print(f"Unique normalisations found: {unique}")
+            print(f"Most common unique normalisations found: {unique.most_common(10)}")
             print(f"Average candidates generated per token: {resp[column][3]:.2f}")
     combined_recall = len(set().union(*[v for v in modules.values()])) / num_norms
     if verbose:
@@ -112,7 +111,7 @@ def not_generated(raw, gold, candidates):
     print(
         f"Most common ungenerated normalisations: {Counter(not_generated.values()).most_common(10)}"
     )
-    return not_generated
+    return not_generated, recall_all
 
 
 def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=1, norms_only=True):
@@ -191,10 +190,14 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=1, norms_only=
     median_rank_not_top = statistics.median(sorted([v[2] for v in not_top.values()]))
     mean_rank_not_top = statistics.mean([v[2] for v in not_top.values()])
     mean_prob_diff_not_top = statistics.mean([v[3] for v in not_top.values()])
+    top_n_recalls = []
+    for i in range(max(ranks.values()) + 1):
+        top_i_recall = len([v for v in ranks.values() if v <= i]) / (
+            id + 1 if not norms_only else norms
+        )
+        top_n_recalls.append(top_i_recall)
     percentage_generated_top = len([v for v in ranks.values() if not v]) / len(ranks)
-    top_n_recall = len([v for v in ranks.values() if v < top_n]) / (
-        id + 1 if not norms_only else norms
-    )
+    top_n_recall = top_n_recalls[top_n - 1]
     if verbose:
         print(
             f"Median rank of correct candidates: {median_rank}, "
@@ -237,7 +240,7 @@ def ranking(raw, gold, candidates_with_preds, verbose=True, top_n=1, norms_only=
         correct_top_probs,
         incorrect_probs_generated,
         incorrect_probs_not_generated,
-        top_n_recall,
+        top_n_recalls,
         top_n_count,
     )
 
@@ -329,11 +332,11 @@ def evaluate(model_path, tweets_path, df_path):
 
 
 if __name__ == "__main__":
-    # evaluate(
-    #     os.path.join(DATA_PATH, "../models/rf.joblib"),
-    #     os.path.join(DATA_PATH, "raw/test.norm"),
-    #     os.path.join(DATA_PATH, "hpc/test.cands"),
-    # )
+    evaluate(
+        os.path.join(DATA_PATH, "../models/rf.joblib"),
+        os.path.join(DATA_PATH, "raw/test.norm"),
+        os.path.join(DATA_PATH, "hpc/test.cands"),
+    )
     # evaluate_cv(
     #     os.path.join(DATA_PATH, "../models/rf"),
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
@@ -344,9 +347,6 @@ if __name__ == "__main__":
     # feature_ablation(
     #     model, os.path.join(DATA_PATH, "eval/logreg_feature_ablation.pickle")
     # )
-    params = {"max_depth": 16, "max_features": None}
-    model = create_rf(params, 100, random_state=np.random.RandomState(42))
-    feature_ablation(model, os.path.join(DATA_PATH, "eval/rf_feature_ablation.pickle"))
-    # with open(os.path.join(DATA_PATH, "eval/rf_feature_ablation.pickle"), "rb") as f:
-    #     output = pickle.load(f)
-    # print(output)
+    # params = {"max_depth": 16, "max_features": None}
+    # model = create_rf(params, 100, random_state=np.random.RandomState(42))
+    # feature_ablation(model, os.path.join(DATA_PATH, "eval/rf_feature_ablation.pickle"))

@@ -8,7 +8,7 @@ from spylls.hunspell.algo.ngram_suggest import precise_affix_score
 from lexnorm.data import word2vec, normEval, norm_dict
 from lexnorm.definitions import DATA_PATH
 from lexnorm.generate_extract.filtering import is_eligible
-from lexnorm.models.normalise import load_candidates
+from lexnorm.models.prepare_df import load_candidates
 
 
 def test_process_data_file():

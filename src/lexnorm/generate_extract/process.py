@@ -123,11 +123,6 @@ def process_train_test(train_path, test_path, train_output_path, test_output_pat
 
 
 if __name__ == "__main__":
-    # process_data_file(
-    #     os.path.join(DATA_PATH, "raw/train.norm"),
-    #     os.path.join(DATA_PATH, "raw/train.norm"),
-    #     os.path.join(DATA_PATH, "hpc/fixed_train.norm"),
-    # )
     # process_train_test(
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "raw/test.norm"),
@@ -138,14 +133,3 @@ if __name__ == "__main__":
         os.path.join(DATA_PATH, "processed/combined.txt"),
         os.path.join(DATA_PATH, "hpc/cv"),
     )
-    # c = load_candidates(os.path.join(DATA_PATH, "hpc/train_final.cands"))
-    # c = c.set_index("cand.1")
-    # c.to_csv(os.path.join(DATA_PATH, "hpc/train_final.cands"))
-    # create_index(
-    #     c, output_path=os.path.join(DATA_PATH, "hpc/fixed_dev_ngrams_idx.norm")
-    # )
-    # c = load_candidates(os.path.join(DATA_PATH, "hpc/fixed_train_ngrams.norm"))
-    # create_index(
-    #     c,
-    #     output_path=os.path.join(DATA_PATH, "hpc/fixed_train_ngrams_idx.norm"),
-    # )

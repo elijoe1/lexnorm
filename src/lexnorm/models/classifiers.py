@@ -1,10 +1,8 @@
 import os
-import pickle
 
 import numpy as np
 from joblib import dump, load
 from sklearn.model_selection import KFold
-from sklearn.tree import plot_tree
 
 from lexnorm.data.baseline import mfr
 from lexnorm.data.normEval import loadNormData
@@ -13,7 +11,7 @@ from lexnorm.evaluation.predictions import evaluate_predictions
 from lexnorm.generate_extract.candidates import create_index
 from lexnorm.models.logreg import create_logreg
 
-from lexnorm.models.normalise import prep_train, load_candidates
+from lexnorm.models.prepare_df import prep_train, load_candidates
 from lexnorm.models.predict import (
     predict_candidates,
     predict_probs,
@@ -143,10 +141,25 @@ def train_predict_evaluate(
     return evaluate_predictions(raw, norm, predictions)[1:6]
 
 
+def evaluate_ensemble():
+    raw, norm = loadNormData(os.path.join(DATA_PATH, "raw/test.norm"))
+    test_df = load_candidates(
+        os.path.join(DATA_PATH, "hpc/test.cands"),
+        random_state=np.random.RandomState(42),
+        shuffle=True,
+    )
+    rf_clf = load(os.path.join(DATA_PATH, "../models/rf.joblib"))
+    lr_clf = load(os.path.join(DATA_PATH, "../models/logreg.joblib"))
+    test_df["probs"] = np.maximum(
+        predict_probs(rf_clf, test_df).probs, predict_probs(lr_clf, test_df).probs
+    )
+    evaluate_predictions(
+        raw, norm, predict_normalisation(raw, predict_candidates(test_df))
+    )
+
+
 if __name__ == "__main__":
     params = {
-        # "min_samples_leaf": 5,
-        # "class_weight": "balanced",
         "max_depth": 16,
         "max_features": None,
     }
@@ -156,26 +169,21 @@ if __name__ == "__main__":
     train_predict_evaluate(
         model,
         os.path.join(DATA_PATH, "../models/rf.joblib"),
-        # None,
         os.path.join(DATA_PATH, "processed/combined.txt"),
         os.path.join(DATA_PATH, "raw/test.norm"),
         os.path.join(DATA_PATH, "hpc/combined.cands"),
         os.path.join(DATA_PATH, "hpc/test.cands"),
-        # os.path.join(DATA_PATH, "../models/output.txt"),
-        None,
+        os.path.join(DATA_PATH, "../models/rf_output.txt"),
         train_first=True,
-        # drop_features="cosine_to_orig",
-        # with_mfr=True,
     )
-    # output = train_predict_evaluate_cv(
+    # train_predict_evaluate_cv(
     #     None,
-    #     os.path.join(DATA_PATH, "../models/logreg"),
+    #     os.path.join(DATA_PATH, "../models/rf"),
     #     os.path.join(DATA_PATH, "processed/combined.txt"),
     #     os.path.join(DATA_PATH, "hpc/cv"),
     #     None,
-    #     # with_mfr=True
-    #     # drop_features="orig_norms_seen",
     #     train_first=False,
     # )
     # with open(os.path.join(DATA_PATH, "processed/mfr.pickle"), "wb") as f:
     #     pickle.dump(output, f)
+    # evaluate_ensemble()

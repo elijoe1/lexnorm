@@ -1,6 +1,6 @@
 from lexnorm.data.baseline import write
 from lexnorm.generate_extract.filtering import is_eligible
-from lexnorm.models.normalise import prep_test
+from lexnorm.models.prepare_df import prep_test
 
 
 def predict_probs(model, candidates):

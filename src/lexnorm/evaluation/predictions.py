@@ -1,7 +1,6 @@
 from collections import Counter
 
 from lexnorm.data.normEval import err
-from lexnorm.data.baseline import mfr
 from lexnorm.generate_extract.filtering import is_eligible
 
 
@@ -54,7 +53,10 @@ def evaluate_predictions(raw, gold, pred):
         f"Most common wrongly un-normalised: {Counter([v for v in errors.values() if v[0] == v[1]]).most_common(10)}"
     )
     print(
-        f"Most common wrongly normalised: {Counter([v for v in errors.values() if v[0] != v[1]]).most_common(10)}"
+        f"Most common incorrect normalisation choice: {Counter([v for v in errors.values() if v[0] != v[2] and v[0] != v[1]]).most_common(10)}"
+    )
+    print(
+        f"Most common false positives: {Counter([v for v in errors.values() if v[0] == v[2]]).most_common(10)}"
     )
 
     return lai, accuracy, error, precision, recall, f1, errors
@@ -96,6 +98,3 @@ def precision_recall_f1(raw, gold, pred):
     print("F1: {:.2f}".format(f1 * 100))
 
     return precision, recall, f1
-
-
-# TODO: for two classifiers, compare predictions
