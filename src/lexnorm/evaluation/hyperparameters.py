@@ -63,10 +63,12 @@ if __name__ == "__main__":
         #     "max_features": ["sqrt", "log2", None],
         # },
         {
-            "max_depth": list(range(3, 20)),
-            "min_samples_leaf": list(range(1, 10)),
-            "min_samples_split": list(range(2, 20)),
-            "max_leaf_nodes": list(range(50, 300)),
+            "max_depth": [7, 10, 13, 16],
+            "min_samples_leaf": [1, 10, 20],
+            "min_samples_split": [2, 6, 10, 14],
+            "max_leaf_nodes": [100, None],
+            "class_weight": [None],
+            "max_features": [None],
         },
         os.path.join(DATA_PATH, "processed/combined.txt"),
         os.path.join(DATA_PATH, "hpc/cv"),
@@ -85,7 +87,7 @@ if __name__ == "__main__":
     #     os.path.join(DATA_PATH, "hpc/cv"),
     # )
     with open(
-        os.path.join(DATA_PATH, "processed/rf_hyperparams_refined_smallrange.pickle"),
+        os.path.join(DATA_PATH, "processed/rf_hyperparams_refined.pickle"),
         "wb",
     ) as f:
         pickle.dump(output, f)
